@@ -12,8 +12,8 @@
 
 | Система | Файлы | Что нужно установить |
 |---|---|---|
-| **Windows** | [LS.ahk](https://github.com/umed-saidov/LS/raw/main/LS.ahk) и [LS.ico](https://github.com/umed-saidov/LS/raw/main/LS.ico) | [AutoHotkey v2](https://www.autohotkey.com) |
-| **macOS** | [LS.lua](https://github.com/umed-saidov/LS/raw/main/macos/LS.lua) | [Hammerspoon](https://www.hammerspoon.org) |
+| **Windows** | [LS.ahk](https://github.com/U-Said/LS/raw/main/LS.ahk) и [LS.ico](https://github.com/U-Said/LS/raw/main/LS.ico) | [AutoHotkey v2](https://www.autohotkey.com) |
+| **macOS** | [LS.lua](https://github.com/U-Said/LS/raw/main/macos/LS.lua) | [Hammerspoon](https://www.hammerspoon.org) |
 
 Всё сразу одним архивом: **Code → Download ZIP**.
 
@@ -36,7 +36,7 @@
 
 ## macOS
 
-> Версия для macOS написана по той же логике, но пока не проверена на реальном Mac. Если что-то работает не так — напишите в [Issues](https://github.com/umed-saidov/LS/issues).
+> Версия для macOS написана по той же логике, но пока не проверена на реальном Mac. Если что-то работает не так — напишите в [Issues](https://github.com/U-Said/LS/issues).
 
 ### Запуск
 
@@ -81,8 +81,8 @@ Typed `ghbdtn` when you meant «привет»? LS notices it when you press Spa
 
 | System | Files | What to install |
 |---|---|---|
-| **Windows** | [LS.ahk](https://github.com/umed-saidov/LS/raw/main/LS.ahk) and [LS.ico](https://github.com/umed-saidov/LS/raw/main/LS.ico) | [AutoHotkey v2](https://www.autohotkey.com) |
-| **macOS** | [LS.lua](https://github.com/umed-saidov/LS/raw/main/macos/LS.lua) | [Hammerspoon](https://www.hammerspoon.org) |
+| **Windows** | [LS.ahk](https://github.com/U-Said/LS/raw/main/LS.ahk) and [LS.ico](https://github.com/U-Said/LS/raw/main/LS.ico) | [AutoHotkey v2](https://www.autohotkey.com) |
+| **macOS** | [LS.lua](https://github.com/U-Said/LS/raw/main/macos/LS.lua) | [Hammerspoon](https://www.hammerspoon.org) |
 
 Everything in one archive: **Code → Download ZIP**.
 
@@ -105,7 +105,7 @@ Everything in one archive: **Code → Download ZIP**.
 
 ## macOS (English)
 
-> The macOS version follows the same logic but has not been tested on a real Mac yet. If something misbehaves, please open an [issue](https://github.com/umed-saidov/LS/issues).
+> The macOS version follows the same logic but has not been tested on a real Mac yet. If something misbehaves, please open an [issue](https://github.com/U-Said/LS/issues).
 
 ### Getting started
 
