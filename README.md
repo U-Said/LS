@@ -73,6 +73,8 @@
 
 **LS (LiteSwitcher)** is a lightweight RU/EN keyboard layout switcher for Windows and macOS — a Punto Switcher alternative in a single script.
 
+![LS: fix examples and the menu](docs/demo-en.png)
+
 Typed `ghbdtn` when you meant «привет»? LS notices it when you press Space, retypes the word and switches the layout. If it misses one, fix it yourself with a double `Shift`. One small file, no installer, no dictionaries, and nothing is sent anywhere.
 
 ## Download
