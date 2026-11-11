@@ -1,8 +1,8 @@
-# LS
+# LS — LiteSwitcher
 
 **Русский** · [English](#english)
 
-Лёгкий переключатель раскладки RU/EN для Windows — аналог Punto Switcher в одном скрипте AutoHotkey.
+**LS (LiteSwitcher)** — лёгкий переключатель раскладки RU/EN для Windows — аналог Punto Switcher в одном скрипте AutoHotkey.
 
 ![LS: примеры исправления и меню в трее](docs/demo.png)
 
@@ -32,7 +32,7 @@
 
 ## English
 
-A lightweight RU/EN keyboard layout switcher for Windows — a Punto Switcher alternative in a single AutoHotkey script.
+**LS (LiteSwitcher)** is a lightweight RU/EN keyboard layout switcher for Windows — a Punto Switcher alternative in a single AutoHotkey script.
 
 Typed `ghbdtn` when you meant «привет»? LS notices it when you press Space, retypes the word and switches the layout. If it misses one, fix it yourself with a double `Shift`. One 25 KB file, no installer, no dictionaries, and nothing is sent anywhere.
 
