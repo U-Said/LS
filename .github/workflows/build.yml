@@ -1,0 +1,119 @@
+# Builds LS for Windows x64, Windows ARM64 and macOS (universal), runs the self-tests.
+# A tag v* also publishes the archives to a GitHub release of this repository.
+name: Build
+
+on:
+  push:
+    branches: [main, native]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    name: Windows ${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: windows-latest
+            zip: LS-Windows.zip
+            machine: '0x8664'
+          - arch: ARM64
+            runner: windows-11-arm
+            zip: LS-Windows-arm64.zip
+            machine: '0xAA64'
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        shell: pwsh
+        run: |
+          cmake -S . -B build -A ${{ matrix.arch }}
+          cmake --build build --config Release
+
+      - name: Self-test (native ${{ matrix.arch }})
+        shell: pwsh
+        run: |
+          build\Release\coretest.exe > coretest.txt
+          if ($LASTEXITCODE) { Get-Content coretest.txt -Encoding UTF8; throw "detector self-test failed" }
+          $p = Start-Process build\Release\LS.exe -ArgumentList '--selftest', 'selftest.txt' -Wait -PassThru
+          Get-Content selftest.txt -Encoding UTF8
+          if ($p.ExitCode -ne 0) { throw "LS.exe self-test: $($p.ExitCode) failed" }
+
+      - name: Check the binary
+        shell: pwsh
+        run: |
+          $b = [IO.File]::ReadAllBytes('build\Release\LS.exe')
+          $machine = [BitConverter]::ToUInt16($b, [BitConverter]::ToInt32($b, 0x3C) + 4)
+          'LS.exe: {0:N0} bytes, machine 0x{1:X4}' -f $b.Length, $machine
+          if ($machine -ne ${{ matrix.machine }}) { throw 'wrong architecture' }
+
+      - name: Package
+        shell: pwsh
+        run: Compress-Archive -Path build\Release\LS.exe -DestinationPath ${{ matrix.zip }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.zip }}
+          path: ${{ matrix.zip }}
+          retention-days: 30
+
+  macos:
+    name: macOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: bash macos/build.sh
+
+      - name: Self-test
+        run: |
+          build/macos/coretest > /dev/null
+          build/macos/LS.app/Contents/MacOS/LS --selftest
+          if arch -x86_64 /usr/bin/true 2>/dev/null; then
+            echo "== Intel slice (Rosetta) =="
+            arch -x86_64 build/macos/LS.app/Contents/MacOS/LS --selftest | tail -n 1
+          else
+            echo "Rosetta is not available here: Intel slice not run"
+          fi
+          build/macos/LS.app/Contents/MacOS/LS --render-icon menubar-icon.png
+
+      - name: Package
+        run: ditto -c -k --keepParent build/macos/LS.app LS-macOS.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LS-macOS.zip
+          path: LS-macOS.zip
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: menubar-icon
+          path: menubar-icon.png
+          retention-days: 7
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows, macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: LS-*.zip
+          merge-multiple: true
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          ls -l LS-*.zip
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "LS ${TAG#v}" --notes "LS ${TAG#v}" --latest
+          gh release upload "$TAG" LS-*.zip --repo "$GITHUB_REPOSITORY" --clobber
