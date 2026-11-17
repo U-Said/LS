@@ -44,7 +44,7 @@ static NSDate *g_excDate;
 static NSString *L(NSString *ru, NSString *en) { return g_ruUI ? ru : en; }
 
 // ------------------------------------------------------------------ text helpers
-static BOOL Chars(NSString *s, unichar *out, int *n)
+static BOOL Utf16(NSString *s, unichar *out, int *n)
 {
     if (s.length > 128) return NO;
     [s getCharacters:out range:NSMakeRange(0, s.length)];
@@ -56,7 +56,7 @@ static int ShouldSwitch(NSString *en, NSString *ru, BOOL curIsEn)
 {
     unichar a[128], b[128];
     int na, nb;
-    if (!Chars(en, a, &na) || !Chars(ru, b, &nb)) return 0;
+    if (!Utf16(en, a, &na) || !Utf16(ru, b, &nb)) return 0;
     return ls_should_switch(a, na, b, nb, curIsEn);
 }
 
@@ -64,7 +64,7 @@ static BOOL NameExcluded(NSString *s)
 {
     unichar b[128];
     int n;
-    return s.length && Chars(s, b, &n) && ls_app_excluded(b, n);
+    return s.length && Utf16(s, b, &n) && ls_app_excluded(b, n);
 }
 
 // ------------------------------------------------------------------ keyboard layouts
@@ -234,7 +234,7 @@ static void AddException(NSString *word)
 {
     unichar b[128];
     int n;
-    if (!word.length || !Chars(word, b, &n) || ls_exc_has_word(b, n)) return;
+    if (!word.length || !Utf16(word, b, &n) || ls_exc_has_word(b, n)) return;
     ls_exc_add_word(b, n);
     dispatch_async(dispatch_get_main_queue(), ^{
         EnsureExceptionsFile();
@@ -413,7 +413,7 @@ static BOOL TryAuto(CGKeyCode tail, CGEventFlags flags)
     return YES;
 }
 
-static BOOL Handle(CGEventType type, CGEventRef e)
+static BOOL OnEvent(CGEventType type, CGEventRef e)
 {
     if (type == kCGEventLeftMouseDown || type == kCGEventRightMouseDown || type == kCGEventOtherMouseDown) {
         ClearBuf();  // the caret may have moved
@@ -503,7 +503,7 @@ static CGEventRef TapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRe
     if (CGEventGetIntegerValueField(event, kCGEventSourceUserData) == kMagic) return event;
     BOOL swallow;
     @autoreleasepool {
-        swallow = Handle(type, event);
+        swallow = OnEvent(type, event);
     }
     return swallow ? NULL : event;
 }
