@@ -18,6 +18,10 @@
 
 Ничего дополнительно ставить не нужно: ни AutoHotkey, ни Hammerspoon, ни библиотек.
 
+## Коротко
+
+![LS коротко: как начать, клавиши, что важно знать](docs/billboard.png)
+
 ## Windows
 
 ### Запуск
@@ -96,6 +100,10 @@ Typed `ghbdtn` when you meant «привет»? LS notices it when you press Spa
 | **macOS 11+**, Apple Silicon and Intel | [LS-macOS.zip](https://github.com/U-Said/LS/releases/latest/download/LS-macOS.zip) |
 
 Nothing else to install: no AutoHotkey, no Hammerspoon, no libraries.
+
+## At a glance
+
+![LS at a glance: getting started, keys, good to know](docs/billboard-en.png)
 
 ## Windows (English)
 

@@ -1,0 +1,155 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<!-- Source of docs/billboard.png and docs/billboard-en.png. Render: tools/make_billboard.ps1 -->
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1200px; height: 100vh; overflow: hidden; }
+  body {
+    font-family: "Segoe UI Variable Text", "Segoe UI", sans-serif;
+    color: #e8eaee;
+    background: radial-gradient(1200px 700px at 15% 0%, #232a36 0%, #151920 55%, #101318 100%);
+    padding: 52px 60px 0;
+  }
+  .mono { font-family: "Cascadia Mono", Consolas, monospace; }
+  header { display: flex; align-items: center; gap: 26px; }
+  header img { width: 84px; height: 84px; }
+  h1 { font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif; font-size: 46px; font-weight: 600; letter-spacing: -0.5px; }
+  h1 span { font-weight: 300; color: #c9ced6; }
+  .sub { font-size: 21px; color: #9aa3af; margin-top: 2px; }
+  h2 { font-size: 15px; font-weight: 600; letter-spacing: 1.6px; text-transform: uppercase; color: #6fc3ef; margin: 40px 0 16px; }
+
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .step { background: #1d222b; border: 1px solid #2c333e; border-radius: 14px; padding: 20px 22px; display: flex; gap: 16px; }
+  .num { flex: none; width: 36px; height: 36px; border-radius: 50%; border: 2px solid #6fc3ef; color: #6fc3ef; font-weight: 700; font-size: 18px; display: grid; place-items: center; }
+  .step b { display: block; font-size: 19px; font-weight: 600; margin-bottom: 4px; }
+  .step p { font-size: 15.5px; color: #9aa3af; line-height: 1.4; }
+
+  .keys { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+  .key { background: #1d222b; border: 1px solid #2c333e; border-radius: 14px; padding: 18px 22px; display: grid; grid-template-columns: 168px 1fr; gap: 18px; align-items: center; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .k { font-size: 15px; font-weight: 600; color: #f2f4f7; background: #2a313c; border: 1px solid #3b4452; border-bottom-width: 3px; border-radius: 7px; padding: 4px 10px; white-space: nowrap; }
+  .plus { color: #6b7380; font-size: 15px; }
+  .key b { display: block; font-size: 17.5px; font-weight: 600; margin-bottom: 3px; }
+  .key p { font-size: 15px; color: #9aa3af; line-height: 1.4; }
+  .ex { margin-top: 6px; font-size: 15px; color: #c9ced6; }
+  .ex .from { color: #7c8491; }
+  .ex .arrow { color: #6fc3ef; margin: 0 6px; }
+  .tag { font-size: 12.5px; font-weight: 600; color: #8c96a3; border: 1px solid #3b4452; border-radius: 5px; padding: 1px 6px; margin-left: 6px; vertical-align: 2px; }
+
+  .notes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .note { border-left: 3px solid #3a4f63; padding: 2px 0 2px 16px; font-size: 15px; color: #9aa3af; line-height: 1.45; }
+  .note b { color: #dfe3e8; font-weight: 600; }
+
+  footer { position: absolute; left: 60px; right: 60px; bottom: 34px; display: flex; justify-content: space-between; font-size: 15px; color: #6b7380; }
+  footer .mono { color: #8c96a3; }
+</style>
+</head>
+<body>
+<header>
+  <img src="../art/ls-256.png" alt="">
+  <div>
+    <h1>LS <span>LiteSwitcher</span></h1>
+    <div class="sub" data-t="sub"></div>
+  </div>
+</header>
+
+<h2 data-t="h_start"></h2>
+<div class="steps">
+  <div class="step"><div class="num">1</div><div><b data-t="s1"></b><p data-t="s1p"></p></div></div>
+  <div class="step"><div class="num">2</div><div><b data-t="s2"></b><p data-t="s2p"></p></div></div>
+  <div class="step"><div class="num">3</div><div><b data-t="s3"></b><p data-t="s3p"></p></div></div>
+</div>
+
+<h2 data-t="h_keys"></h2>
+<div class="keys">
+  <div class="key">
+    <div class="chips"><span class="k" data-t="space"></span><span class="plus" data-t="or"></span><span class="k">Return</span><span class="tag">Mac</span></div>
+    <div><b data-t="k1"></b><p data-t="k1p"></p>
+      <div class="ex mono"><span class="from">ghbdtn</span><span class="arrow">→</span>привет&nbsp;&nbsp;&nbsp;<span class="from">руддщ</span><span class="arrow">→</span>hello</div></div>
+  </div>
+  <div class="key">
+    <div class="chips"><span class="k">Shift</span><span class="k">Shift</span></div>
+    <div><b data-t="k2"></b><p data-t="k2p"></p></div>
+  </div>
+  <div class="key">
+    <div class="chips"><span class="k">Pause</span><span class="tag">Windows</span></div>
+    <div><b data-t="k3"></b><p data-t="k3p"></p></div>
+  </div>
+  <div class="key">
+    <div class="chips"><span class="k">Shift</span><span class="plus">+</span><span class="k">Pause</span><span class="tag">Windows</span></div>
+    <div><b data-t="k4"></b><p data-t="k4p"></p></div>
+  </div>
+  <div class="key">
+    <div class="chips"><span class="k" data-t="undo"></span></div>
+    <div><b data-t="k5"></b><p data-t="k5p"></p></div>
+  </div>
+  <div class="key">
+    <div class="chips"><span class="k" data-t="icon"></span></div>
+    <div><b data-t="k6"></b><p data-t="k6p"></p></div>
+  </div>
+</div>
+
+<h2 data-t="h_notes"></h2>
+<div class="notes">
+  <div class="note" data-t="n1"></div>
+  <div class="note" data-t="n2"></div>
+  <div class="note" data-t="n3"></div>
+</div>
+
+<footer><span class="mono">github.com/U-Said/LS</span><span data-t="foot"></span></footer>
+
+<script>
+const T = {
+  ru: {
+    sub: "Переключатель раскладки RU/EN без установки · Windows x64 и ARM64 · macOS",
+    h_start: "Начать за минуту",
+    s1: "Скачайте", s1p: "Архив для своей системы на странице Releases: Windows, Windows ARM или macOS.",
+    s2: "Распакуйте", s2p: "В любую папку. Права администратора и дополнительные программы не нужны.",
+    s3: "Запустите", s3p: "LS.exe или LS.app. Значок LS появится у часов или в строке меню.",
+    h_keys: "Клавиши",
+    space: "Пробел", or: "или",
+    k1: "Исправляет само", k1p: "Слово набрано не в той раскладке — LS перепечатает его и переключит раскладку.",
+    k2: "Двойной Shift — вручную", k2p: "Исправляет последнее слово. Нажмите ещё раз, чтобы вернуть как было.",
+    k3: "То же, что двойной Shift", k3p: "Одна клавиша для исправления последнего слова.",
+    k4: "Выделенный текст", k4p: "Переводит выделение в другую раскладку. На Mac — двойной Shift. Буфер обмена вернётся.",
+    undo: "Отмена замены",
+    k5: "LS учится", k5p: "Отмените ошибочную замену двойным Shift — LS запомнит слово и больше его не тронет.",
+    icon: "Значок LS",
+    k6: "Меню", k6p: "Автопереключение, двойной Shift, автозапуск, список исключений, выход.",
+    h_notes: "Хорошо знать",
+    n1: "<b>Без словаря.</b> Слова оцениваются по правилам русского и английского языка, поэтому промахи возможны.",
+    n2: "<b>В терминалах</b> автозамена выключена. Любую программу можно исключить строкой <span class='mono'>@имя</span> в исключениях.",
+    n3: "<b>Приватно.</b> Нажатия хранятся только в памяти и только для текущего слова. Ничего не отправляется.",
+    foot: "Скачать: Releases → LS-Windows.zip · LS-Windows-arm64.zip · LS-macOS.zip",
+  },
+  en: {
+    sub: "RU/EN keyboard layout switcher, no installer · Windows x64 and ARM64 · macOS",
+    h_start: "Up and running in a minute",
+    s1: "Download", s1p: "The archive for your system from Releases: Windows, Windows on ARM or macOS.",
+    s2: "Unzip", s2p: "Into any folder. No admin rights and no extra software needed.",
+    s3: "Run", s3p: "LS.exe or LS.app. The LS icon appears next to the clock or in the menu bar.",
+    h_keys: "Keys",
+    space: "Space", or: "or",
+    k1: "Fixes on its own", k1p: "Typed a word in the wrong layout? LS retypes it and switches the layout.",
+    k2: "Double Shift — by hand", k2p: "Converts the last word. Press it again to put it back.",
+    k3: "Same as double Shift", k3p: "A single key to convert the last word.",
+    k4: "Selected text", k4p: "Converts the selection to the other layout. On a Mac: double Shift. The clipboard is restored.",
+    undo: "Undo a fix",
+    k5: "LS learns", k5p: "Undo a wrong fix with double Shift and LS remembers the word and leaves it alone.",
+    icon: "LS icon",
+    k6: "Menu", k6p: "Auto-switching, double Shift, start at login, exceptions list, quit.",
+    h_notes: "Good to know",
+    n1: "<b>No dictionary.</b> Words are judged by Russian and English spelling rules, so misses can happen.",
+    n2: "<b>Terminals</b> are left alone. Exclude any other app with an <span class='mono'>@name</span> line in the exceptions.",
+    n3: "<b>Private.</b> Keystrokes stay in memory, only for the current word. Nothing is sent anywhere.",
+    foot: "Download: Releases → LS-Windows.zip · LS-Windows-arm64.zip · LS-macOS.zip",
+  },
+};
+const t = T[location.search.includes("en") ? "en" : "ru"];
+document.documentElement.lang = location.search.includes("en") ? "en" : "ru";
+document.querySelectorAll("[data-t]").forEach(e => e.innerHTML = t[e.dataset.t]);
+</script>
+</body>
+</html>
