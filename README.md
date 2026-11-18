@@ -8,6 +8,8 @@
 
 Набрали `ghbdtn` вместо «привет» — LS заметит это по пробелу, перепечатает слово и переключит раскладку. Если не заметил, исправьте вручную двойным `Shift`. Без словарей и без отправки данных куда-либо.
 
+**Нравится LS? [Поддержите проект донатом](https://app.lava.top/4179967925)** ([подробнее](#поддержать-проект))
+
 ## Скачать
 
 | Система | Файл |
@@ -75,6 +77,15 @@
 - В полях паролей macOS сама скрывает нажатия от LS. В Windows LS не трогает классические поля паролей; поле пароля в браузере он не распознаёт, но слово исправляется только после пробела, а в паролях пробелов обычно нет.
 - Нажатия хранятся только в памяти и только для текущего слова; LS ничего не записывает и никуда не отправляет.
 
+## Поддержать проект
+
+LS бесплатный, без рекламы и с открытым кодом. Если программа вам пригодилась, можно сказать спасибо донатом:
+**https://app.lava.top/4179967925** → кнопка «Отправить донат».
+
+- Можно выбрать готовую сумму ($5, $10, $50 или 50, 100, 500 ₽) или указать свою и оставить комментарий.
+- Принимаются банковские карты, в том числе российские (оплата в рублях, есть СБП), и другие способы, которые предложит страница оплаты.
+- Платёж проходит через платформу lava.top. Донат добровольный и не возвращается.
+
 ## Сборка из исходников
 
 - **Windows** (Visual Studio 2022 с C++): `cmake -S . -B build -A x64` (или `-A ARM64`), затем `cmake --build build --config Release`. Проверки: `build\Release\LS.exe --selftest report.txt` и `tools\e2e_windows.ps1`.
@@ -90,6 +101,8 @@
 ![LS: fix examples and the menu](docs/demo-en.png)
 
 Typed `ghbdtn` when you meant «привет»? LS notices it when you press Space, retypes the word and switches the layout. If it misses one, fix it yourself with a double `Shift`. No dictionaries, and nothing is sent anywhere.
+
+**Like LS? [Support the project with a donation](https://app.lava.top/4179967925)** ([details](#support-the-project))
 
 ## Download
 
@@ -137,6 +150,15 @@ After an update macOS may stop trusting LS: remove it from **Accessibility** wit
 - Auto-switching is off in terminals. Exclude other apps with an `@app_name` line in the exceptions file.
 - macOS hides keystrokes in password fields from LS. On Windows LS skips classic password boxes; it cannot detect password fields in browsers, but a word is only fixed after Space, and passwords rarely contain spaces.
 - Keystrokes are kept in memory only, and only for the current word; LS logs nothing and sends nothing.
+
+## Support the project
+
+LS is free, ad-free and open source. If it is useful to you, you can say thanks with a donation:
+**https://app.lava.top/4179967925** → the «Отправить донат» (Send a donation) button.
+
+- Pick a preset amount ($5, $10, $50 or €5, €10, €50) or enter your own, and leave a comment if you like.
+- Bank cards are accepted, plus whatever other methods the payment page offers in your country.
+- Payments are handled by the lava.top platform. Donations are voluntary and non-refundable.
 
 ## Building
 
