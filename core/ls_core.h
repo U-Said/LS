@@ -13,7 +13,8 @@ extern "C" {
 
 typedef uint16_t ls_char;
 
-#define LS_VERSION "2.0.0"
+#define LS_VERSION "2.0.1"
+#define LS_DONATE_URL "https://app.lava.top/4179967925"
 
 /* en / ru: what the typed keys give in the English and in the Russian layout;
  * cur_is_en: which of the two is active. Returns 1 when the word should be retyped

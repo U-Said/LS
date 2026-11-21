@@ -31,7 +31,7 @@ const char kTerminals[] =
     "windowsterminal cmd powershell pwsh conhost openconsole putty kitty mintty alacritty wezterm-gui mobaxterm tabby hyper";
 
 enum : UINT { WM_TRAY = WM_APP + 1, WM_LS_RUN, WM_LS_HELLO };
-enum : UINT { IDM_AUTO = 100, IDM_SHIFT, IDM_STARTUP, IDM_EXCEPTIONS, IDM_RELOAD, IDM_EXIT };
+enum : UINT { IDM_AUTO = 100, IDM_SHIFT, IDM_STARTUP, IDM_EXCEPTIONS, IDM_RELOAD, IDM_EXIT, IDM_DONATE };
 constexpr UINT_PTR kTimerExceptions = 1;
 
 struct Key {
@@ -864,6 +864,9 @@ void OnCommand(UINT id)
     case IDM_RELOAD:
         LoadExceptions();
         break;
+    case IDM_DONATE:
+        ShellExecuteW(nullptr, L"open", TEXT(LS_DONATE_URL), nullptr, nullptr, SW_SHOWNORMAL);
+        break;
     case IDM_EXIT:
         DestroyWindow(g_wnd);
         break;
@@ -882,6 +885,7 @@ void ShowMenu()
     add(IDM_EXCEPTIONS, T(L"Исключения…", L"Exceptions…"), false);
     add(IDM_RELOAD, T(L"Перечитать исключения", L"Reload exceptions"), false);
     AppendMenuW(m, MF_SEPARATOR, 0, nullptr);
+    add(IDM_DONATE, T(L"Поддержать проект…", L"Support the project…"), false);
     add(IDM_EXIT, T(L"Выход", L"Exit"), false);
     POINT pt;
     GetCursorPos(&pt);

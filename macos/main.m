@@ -755,7 +755,8 @@ static void SetLogin(BOOL on)
     [self add:m title:L(@"Исключения…", @"Exceptions…") action:@selector(openExceptions:) on:NO];
     [self add:m title:L(@"Перечитать исключения", @"Reload exceptions") action:@selector(reloadExceptions:) on:NO];
     [m addItem:NSMenuItem.separatorItem];
-    NSMenuItem *about = [m addItemWithTitle:[NSString stringWithFormat:@"LS %s", LS_VERSION] action:nil keyEquivalent:@""];
+    [self add:m title:L(@"Поддержать проект…", @"Support the project…") action:@selector(openDonate:) on:NO];
+    NSMenuItem *about =[m addItemWithTitle:[NSString stringWithFormat:@"LS %s", LS_VERSION] action:nil keyEquivalent:@""];
     about.enabled = NO;
     NSMenuItem *quit = [m addItemWithTitle:L(@"Выйти из LS", @"Quit LS") action:@selector(terminate:) keyEquivalent:@"q"];
     quit.target = NSApp;
@@ -792,6 +793,12 @@ static void SetLogin(BOOL on)
 {
     (void)sender;
     LoadExceptions();
+}
+
+- (void)openDonate:(id)sender
+{
+    (void)sender;
+    [NSWorkspace.sharedWorkspace openURL:[NSURL URLWithString:@LS_DONATE_URL]];
 }
 
 - (void)openAccessibility:(id)sender
