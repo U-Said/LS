@@ -1,7 +1,7 @@
 ﻿# Builds the app icons from art/ls-<size>.png (the "LS toggle, Graphite" artwork; art/ls.svg is the
 # master drawing, art/ls-small.svg the bolder variant the 16–32 px PNGs are drawn from):
 #   windows/LS.ico      — all 16 Windows 11 sizes: up to 48 px as plain BMP frames (tray, menus, small views),
-#                         60…256 px as PNG frames to keep LS.exe small
+#                         60…256 px as PNG frames to keep LiteSwitcher.exe small
 #   macos/LS.iconset/   — PNG set for iconutil (the .icns itself is made on the Mac by macos/build.sh)
 # A size with no PNG in art/ is scaled down from art/ls-1024.png.
 # Run from anywhere: powershell -File tools/make_icons.ps1

@@ -1,4 +1,4 @@
-/* LS (LiteSwitcher) — shared core. See ls_core.h.
+/* LiteSwitcher — shared core. See ls_core.h.
  * There is no dictionary: a word is judged by Russian and English spelling rules
  * and by lists of frequent words. */
 #include "ls_core.h"

@@ -1,6 +1,6 @@
-/* LS (LiteSwitcher) — shared core: decides whether a typed word is in the wrong layout.
+/* LiteSwitcher — shared core: decides whether a typed word is in the wrong layout.
  * Used as is by the Windows (Win32) and macOS (Cocoa) apps. Plain C11, no dependencies.
- * Text is UTF-16 (one unit per character): everything LS handles is in the BMP. */
+ * Text is UTF-16 (one unit per character): everything LiteSwitcher handles is in the BMP. */
 #ifndef LS_CORE_H
 #define LS_CORE_H
 
@@ -13,7 +13,7 @@ extern "C" {
 
 typedef uint16_t ls_char;
 
-#define LS_VERSION "2.0.2"
+#define LS_VERSION "2.1.0"
 #define LS_DONATE_URL "https://app.lava.top/4179967925"
 
 /* en / ru: what the typed keys give in the English and in the Russian layout;

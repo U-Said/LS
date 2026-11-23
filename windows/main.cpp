@@ -1,4 +1,4 @@
-// LS (LiteSwitcher) for Windows: fixes text typed in the wrong RU/EN keyboard layout.
+// LiteSwitcher for Windows: fixes text typed in the wrong RU/EN keyboard layout.
 // One native .exe: no installer, no runtime, settings are kept next to the exe.
 //   Space                  - a word typed in the wrong layout is fixed automatically
 //   Pause or double Shift  - fix the last word (again - revert); with no fresh word, fix the selected text
@@ -26,7 +26,8 @@ const wchar_t kWndClass[] = L"LS_LiteSwitcher";
 const wchar_t kMutex[] = L"Local\\LS_LiteSwitcher";
 const wchar_t kRunKey[] = L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
 const wchar_t kApprovedKey[] = L"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run";
-const wchar_t kRunName[] = L"LS";
+const wchar_t kRunName[] = L"LiteSwitcher";
+const wchar_t kOldRunName[] = L"LS";  // up to 2.0.x the program was LS.exe with LS.ini and this autostart name
 const char kTerminals[] =
     "windowsterminal cmd powershell pwsh conhost openconsole putty kitty mintty alacritty wezterm-gui mobaxterm tabby hyper";
 
@@ -127,14 +128,22 @@ FILETIME FileTime(const std::wstring &path)
 
 bool Exists(const std::wstring &path) { return GetFileAttributesW(path.c_str()) != INVALID_FILE_ATTRIBUTES; }
 
+// Settings of the old name (LS.ini, %APPDATA%\LS) are taken over once, by renaming them.
+void AdoptOld(const std::wstring &oldPath, const std::wstring &newPath)
+{
+    if (!Exists(newPath) && Exists(oldPath)) MoveFileW(oldPath.c_str(), newPath.c_str());
+}
+
 void InitPaths()
 {
     wchar_t buf[MAX_PATH * 4];
     DWORD n = GetModuleFileNameW(nullptr, buf, ARRAYSIZE(buf));
     g_exe.assign(buf, n);
     g_dir = g_exe.substr(0, g_exe.find_last_of(L"\\/"));
-    // Portable: settings live next to LS.exe. If that folder is read-only, fall back to %APPDATA%\LS.
-    HANDLE h = CreateFileW((g_dir + L"\\LS.ini").c_str(), FILE_APPEND_DATA,
+    // Portable: settings live next to LiteSwitcher.exe. If that folder is read-only, fall back to
+    // %APPDATA%\LiteSwitcher.
+    AdoptOld(g_dir + L"\\LS.ini", g_dir + L"\\LiteSwitcher.ini");
+    HANDLE h = CreateFileW((g_dir + L"\\LiteSwitcher.ini").c_str(), FILE_APPEND_DATA,
                            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_ALWAYS,
                            FILE_ATTRIBUTE_NORMAL, nullptr);
     if (h != INVALID_HANDLE_VALUE) {
@@ -142,12 +151,15 @@ void InitPaths()
     } else {
         PWSTR app = nullptr;
         if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, nullptr, &app))) {
-            g_dir = std::wstring(app) + L"\\LS";
+            std::wstring base(app);
+            AdoptOld(base + L"\\LS", base + L"\\LiteSwitcher");
+            g_dir = base + L"\\LiteSwitcher";
             CreateDirectoryW(g_dir.c_str(), nullptr);
+            AdoptOld(g_dir + L"\\LS.ini", g_dir + L"\\LiteSwitcher.ini");
         }
         CoTaskMemFree(app);
     }
-    g_ini = g_dir + L"\\LS.ini";
+    g_ini = g_dir + L"\\LiteSwitcher.ini";
     g_exc = g_dir + L"\\exceptions.txt";
 }
 
@@ -181,9 +193,9 @@ void LoadExceptions()
 void EnsureExceptionsFile()
 {
     if (Exists(g_exc)) return;
-    Append(g_exc, Utf8(T(L"# Исключения LS. Одно слово в строке — оно не будет автоисправляться.\r\n"
+    Append(g_exc, Utf8(T(L"# Исключения LiteSwitcher. Одно слово в строке — оно не будет автоисправляться.\r\n"
                          L"# Строка вида @имя_программы (без .exe) отключает автопереключение в этой программе.\r\n",
-                         L"# LS exceptions. One word per line: it will not be auto-fixed.\r\n"
+                         L"# LiteSwitcher exceptions. One word per line: it will not be auto-fixed.\r\n"
                          L"# A line like @program_name (without .exe) turns auto-switching off in that program.\r\n")));
 }
 
@@ -596,7 +608,7 @@ void ManualConvert()
     if (!next || next == cur) return;
     std::wstring old = Render(g_buf, cur);
     Queue({false, (int)old.size(), Render(g_buf, next), 0, target, next, g_lastAuto});
-    g_lastAuto.clear();  // undoing an auto-fix teaches LS the word (see Action::learn)
+    g_lastAuto.clear();  // undoing an auto-fix teaches LiteSwitcher the word (see Action::learn)
     g_bufLayout = next;
 }
 
@@ -768,6 +780,50 @@ void SetStartup(bool on)
     }
 }
 
+// LS 2.0.x started with Windows under the name "LS": move that entry over to LiteSwitcher.exe once.
+// If it was switched off in Settings > Apps > Startup, autostart stays off.
+void AdoptOldStartup()
+{
+    wchar_t value[MAX_PATH * 4];
+    DWORD size = sizeof(value);
+    if (RegGetValueW(HKEY_CURRENT_USER, kRunKey, kOldRunName, RRF_RT_REG_SZ, nullptr, value, &size) != ERROR_SUCCESS)
+        return;
+    CharLowerW(value);
+    if (!wcsstr(value, L"\\ls.exe")) return;  // some other program called LS
+    BYTE approved[12];
+    size = sizeof(approved);
+    bool off = RegGetValueW(HKEY_CURRENT_USER, kApprovedKey, kOldRunName, RRF_RT_REG_BINARY, nullptr, approved,
+                            &size) == ERROR_SUCCESS &&
+               size >= 1 && (approved[0] & 1);
+    RegDeleteKeyValueW(HKEY_CURRENT_USER, kRunKey, kOldRunName);
+    RegDeleteKeyValueW(HKEY_CURRENT_USER, kApprovedKey, kOldRunName);
+    if (!off) SetStartup(true);
+}
+
+// A running LS.exe (2.0.x, the old name) is closed so that LiteSwitcher.exe takes over without a restart.
+// Returns false when the running copy is LiteSwitcher itself.
+bool RetireOldName()
+{
+    HWND w = FindWindowW(kWndClass, nullptr);
+    DWORD pid = 0;
+    if (!w || !GetWindowThreadProcessId(w, &pid)) return false;
+    HANDLE p = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, FALSE, pid);
+    if (!p) return false;
+    wchar_t path[MAX_PATH * 4];
+    DWORD n = ARRAYSIZE(path);
+    bool old = false;
+    if (QueryFullProcessImageNameW(p, 0, path, &n)) {
+        const wchar_t *name = wcsrchr(path, L'\\');
+        old = _wcsicmp(name ? name + 1 : path, L"LS.exe") == 0;
+    }
+    if (old) {
+        PostMessageW(w, WM_CLOSE, 0, 0);  // LS 2.0.x quits on WM_CLOSE: tray icon and hooks are removed
+        old = WaitForSingleObject(p, 5000) == WAIT_OBJECT_0;
+    }
+    CloseHandle(p);
+    return old;
+}
+
 // The AutoHotkey version (LS.ahk) would fix every word twice: close it and take over its autostart.
 BOOL CALLBACK CloseScriptVersion(HWND w, LPARAM)
 {
@@ -805,8 +861,7 @@ void TrayAdd()
     g_nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP | NIF_SHOWTIP;
     g_nid.uCallbackMessage = WM_TRAY;
     if (!g_nid.hIcon) LoadIconMetric(g_inst, MAKEINTRESOURCEW(IDI_LS), LIM_SMALL, &g_nid.hIcon);
-    wcscpy_s(g_nid.szTip, T(L"LS " TEXT(LS_VERSION) L" — двойной Shift: исправить раскладку",
-                            L"LS " TEXT(LS_VERSION) L" — double Shift: fix the layout"));
+    wcscpy_s(g_nid.szTip, L"LiteSwitcher");
     Shell_NotifyIconW(NIM_ADD, &g_nid);
     g_nid.uVersion = NOTIFYICON_VERSION_4;
     Shell_NotifyIconW(NIM_SETVERSION, &g_nid);
@@ -917,8 +972,9 @@ LRESULT CALLBACK WndProc(HWND h, UINT msg, WPARAM wp, LPARAM lp)
         RunActions();
         return 0;
     case WM_LS_HELLO:
-        Balloon(T(L"LS уже запущен", L"LS is already running"),
-                T(L"Значок LS — в области уведомлений, у часов.", L"The LS icon is in the notification area."));
+        Balloon(T(L"LiteSwitcher уже запущен", L"LiteSwitcher is already running"),
+                T(L"Значок LiteSwitcher — в области уведомлений, у часов.",
+                  L"The LiteSwitcher icon is in the notification area."));
         return 0;
     case WM_TIMER:
         if (wp == kTimerExceptions) {
@@ -938,7 +994,7 @@ LRESULT CALLBACK WndProc(HWND h, UINT msg, WPARAM wp, LPARAM lp)
     return DefWindowProcW(h, msg, wp, lp);
 }
 
-// ------------------------------------------------------------------ self-test: LS.exe --selftest report.txt
+// ------------------------------------------------------------------ self-test: LiteSwitcher.exe --selftest report.txt
 std::vector<Key> KeysFor(const std::wstring &text, HKL hkl)
 {
     std::vector<Key> keys;
@@ -1020,8 +1076,8 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int)
     LPWSTR *argv = CommandLineToArgvW(GetCommandLineW(), &argc);
     if (argv && argc >= 3 && wcscmp(argv[1], L"--selftest") == 0) return SelfTest(argv[2]);
 
-    HANDLE mutex = CreateMutexW(nullptr, FALSE, kMutex);
-    if (GetLastError() == ERROR_ALREADY_EXISTS) {
+    HANDLE mutex = CreateMutexW(nullptr, FALSE, kMutex);  // same name as in LS 2.0.x: one copy of either
+    if (GetLastError() == ERROR_ALREADY_EXISTS && !RetireOldName()) {
         if (HWND w = FindWindowW(kWndClass, nullptr)) PostMessageW(w, WM_LS_HELLO, 0, 0);
         return 0;
     }
@@ -1045,18 +1101,19 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int)
     wc.hIcon = LoadIconW(inst, MAKEINTRESOURCEW(IDI_LS));
     wc.lpszClassName = kWndClass;
     RegisterClassExW(&wc);
-    g_wnd = CreateWindowExW(0, kWndClass, L"LS", WS_OVERLAPPED, 0, 0, 0, 0, nullptr, nullptr, inst, nullptr);
+    g_wnd = CreateWindowExW(0, kWndClass, L"LiteSwitcher", WS_OVERLAPPED, 0, 0, 0, 0, nullptr, nullptr, inst, nullptr);
     g_taskbarCreated = RegisterWindowMessageW(L"TaskbarCreated");
     ChangeWindowMessageFilterEx(g_wnd, g_taskbarCreated, MSGFLT_ALLOW, nullptr);
     ChangeWindowMessageFilterEx(g_wnd, WM_LS_HELLO, MSGFLT_ALLOW, nullptr);
     TrayAdd();
     RetireScriptVersion();
+    AdoptOldStartup();
 
     g_kbd = SetWindowsHookExW(WH_KEYBOARD_LL, KeyboardProc, inst, 0);
     g_mouse = SetWindowsHookExW(WH_MOUSE_LL, MouseProc, inst, 0);
     if (!g_kbd) {
-        MessageBoxW(nullptr, T(L"Не удалось перехватывать клавиатуру.", L"Could not hook the keyboard."), L"LS",
-                    MB_ICONERROR);
+        MessageBoxW(nullptr, T(L"Не удалось перехватывать клавиатуру.", L"Could not hook the keyboard."),
+                    L"LiteSwitcher", MB_ICONERROR);
         return 1;
     }
     SetTimer(g_wnd, kTimerExceptions, 2000, nullptr);
@@ -1064,15 +1121,15 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int)
     HKL en, ru;
     FindLayouts(nullptr, &en, &ru);
     if (!en || !ru) {
-        Balloon(T(L"LS: нужны две раскладки", L"LS needs two layouts"),
+        Balloon(T(L"LiteSwitcher: нужны две раскладки", L"LiteSwitcher needs two layouts"),
                 T(L"Добавьте в Windows раскладки «Русская» и «Английская (США)».",
                   L"Add the Russian and English (US) keyboard layouts in Windows settings."));
     } else if (!ReadOption(L"Welcomed", 0)) {
-        Balloon(T(L"LS работает", L"LS is running"),
+        Balloon(T(L"LiteSwitcher работает", L"LiteSwitcher is running"),
                 T(L"Пробел исправляет слово, набранное не в той раскладке. Двойной Shift или Pause — вручную. "
-                  L"Меню — по значку LS.",
+                  L"Меню — по значку LiteSwitcher.",
                   L"Space fixes a word typed in the wrong layout. Double Shift or Pause fixes it by hand. "
-                  L"Click the LS icon for the menu."));
+                  L"Click the LiteSwitcher icon for the menu."));
         WriteOption(L"Welcomed", true);
     }
 

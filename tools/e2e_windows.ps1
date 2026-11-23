@@ -1,6 +1,6 @@
-﻿# End-to-end check of LS.exe on this PC: starts LS, opens a test window and "types" into it with
+﻿# End-to-end check of LiteSwitcher.exe on this PC: starts it, opens a test window and "types" into it with
 # scan codes, exactly like a physical keyboard. Needs the Russian and English (US) layouts.
-#   powershell -STA -File tools/e2e_windows.ps1 -Exe build\Release\LS.exe
+#   powershell -STA -File tools/e2e_windows.ps1 -Exe build\Release\LiteSwitcher.exe
 # Takes about 20 seconds; do not type while it runs. Your clipboard is left as it was.
 param([Parameter(Mandatory)][string]$Exe)
 $ErrorActionPreference = 'Stop'
@@ -62,7 +62,7 @@ function Double-Shift { Ensure-Focus; foreach ($n in 1, 2) { [K]::Scan(0x2A, $fa
 function Press-Vk([int]$vk) { Ensure-Focus; [K]::Vk($vk, $false); [K]::Vk($vk, $true); Pump 300 }
 function Layout { [System.Windows.Forms.InputLanguage]::CurrentInputLanguage.Culture.TwoLetterISOLanguageName }
 function Set-En { [System.Windows.Forms.InputLanguage]::CurrentInputLanguage = [System.Windows.Forms.InputLanguage]::FromCulture([Globalization.CultureInfo]'en-US'); Pump 100 }
-function Reset([string]$text = '') { $tb.Text = $text; $tb.SelectionStart = $tb.TextLength; Press-Vk 0x1B; Set-En }   # Esc: LS forgets the word
+function Reset([string]$text = '') { $tb.Text = $text; $tb.SelectionStart = $tb.TextLength; Press-Vk 0x1B; Set-En }   # Esc: LiteSwitcher forgets the word
 
 $script:fails = 0
 function Check([string]$what, [string]$want, [string]$wantLayout) {
@@ -81,13 +81,13 @@ $exe = (Resolve-Path $Exe).Path
 $dir = Split-Path $exe
 $excFile = Join-Path $dir 'exceptions.txt'
 Remove-Item $excFile -ErrorAction SilentlyContinue
-Get-Process LS -ErrorAction SilentlyContinue | Where-Object Path -eq $exe | Stop-Process -Force
+Get-Process ([IO.Path]::GetFileNameWithoutExtension($exe)) -ErrorAction SilentlyContinue | Where-Object Path -eq $exe | Stop-Process -Force
 $ls = Start-Process $exe -PassThru
 Start-Sleep -Milliseconds 1200
 
 $clipBefore = if ([System.Windows.Forms.Clipboard]::ContainsText()) { [System.Windows.Forms.Clipboard]::GetText() } else { $null }
 $form = New-Object System.Windows.Forms.Form
-$form.Text = 'LS test - do not type'; $form.TopMost = $true; $form.Width = 520; $form.Height = 160; $form.StartPosition = 'CenterScreen'
+$form.Text = 'LiteSwitcher test - do not type'; $form.TopMost = $true; $form.Width = 520; $form.Height = 160; $form.StartPosition = 'CenterScreen'
 $tb = New-Object System.Windows.Forms.TextBox
 $tb.Multiline = $true; $tb.Dock = 'Fill'; $tb.Font = New-Object System.Drawing.Font('Segoe UI', 14)
 $form.Controls.Add($tb)
