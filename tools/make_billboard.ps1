@@ -11,8 +11,8 @@ $browser = @("${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe",
 if (-not $browser) { throw 'Neither Edge nor Chrome is installed' }
 $profileDir = Join-Path $env:TEMP 'ls-billboard-browser'
 $shots = @(
-    @{ page = 'billboard.html'; q = '?ru'; out = 'billboard.png';    h = 1110 },
-    @{ page = 'billboard.html'; q = '?en'; out = 'billboard-en.png'; h = 1068 },
+    @{ page = 'billboard.html'; q = '?ru'; out = 'billboard.png';    h = 1135 },
+    @{ page = 'billboard.html'; q = '?en'; out = 'billboard-en.png'; h = 1090 },
     @{ page = 'demo.html';      q = '?ru'; out = 'demo.png';         h = 560 },
     @{ page = 'demo.html';      q = '?en'; out = 'demo-en.png';      h = 560 }
 )
