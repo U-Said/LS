@@ -14,7 +14,7 @@
   }
   .mono { font-family: "Cascadia Mono", Consolas, monospace; }
   header { display: flex; align-items: center; gap: 26px; }
-  header img { width: 84px; height: 84px; }
+  header img { width: 112px; height: 112px; margin: -26px -6px; }   /* the toggle fills the middle of the square */
   h1 { font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif; font-size: 46px; font-weight: 600; letter-spacing: -0.5px; }
   h1 span { font-weight: 300; color: #c9ced6; }
   .sub { font-size: 21px; color: #9aa3af; margin-top: 2px; }
@@ -50,7 +50,7 @@
 <header>
   <img src="../art/ls-256.png" alt="">
   <div>
-    <h1>LS <span>LiteSwitcher</span></h1>
+    <h1>LiteSwitcher</h1>
     <div class="sub" data-t="sub"></div>
   </div>
 </header>
@@ -103,7 +103,7 @@
 <script>
 const T = {
   ru: {
-    sub: "Переключатель раскладки RU/EN без установки · Windows x64 и ARM64 · macOS",
+    sub: "Лёгкий и компактный переключатель языка. Запустил — забыл, он работает!",
     h_start: "Начать за минуту",
     s1: "Скачайте", s1p: "Архив для своей системы на странице Releases: Windows, Windows ARM или macOS.",
     s2: "Распакуйте", s2p: "В любую папку. Права администратора и дополнительные программы не нужны.",
@@ -117,7 +117,7 @@ const T = {
     undo: "Отмена замены",
     k5: "LS учится", k5p: "Отмените ошибочную замену двойным Shift — LS запомнит слово и больше его не тронет.",
     icon: "Значок LS",
-    k6: "Меню", k6p: "Автопереключение, двойной Shift, автозапуск, список исключений, выход.",
+    k6: "Меню", k6p: "Автопереключение, двойной Shift, автозапуск, исключения, «Поддержать проект…» — донат на lava.top.",
     h_notes: "Хорошо знать",
     n1: "<b>Без словаря.</b> Слова оцениваются по правилам русского и английского языка, поэтому промахи возможны.",
     n2: "<b>В терминалах</b> автозамена выключена. Любую программу можно исключить строкой <span class='mono'>@имя</span> в исключениях.",
@@ -125,7 +125,7 @@ const T = {
     foot: "Скачать: Releases → LS-Windows.zip · LS-Windows-arm64.zip · LS-macOS.zip",
   },
   en: {
-    sub: "RU/EN keyboard layout switcher, no installer · Windows x64 and ARM64 · macOS",
+    sub: "A light, compact keyboard layout switcher. Start it and forget it: it just works!",
     h_start: "Up and running in a minute",
     s1: "Download", s1p: "The archive for your system from Releases: Windows, Windows on ARM or macOS.",
     s2: "Unzip", s2p: "Into any folder. No admin rights and no extra software needed.",
@@ -139,7 +139,7 @@ const T = {
     undo: "Undo a fix",
     k5: "LS learns", k5p: "Undo a wrong fix with double Shift and LS remembers the word and leaves it alone.",
     icon: "LS icon",
-    k6: "Menu", k6p: "Auto-switching, double Shift, start at login, exceptions list, quit.",
+    k6: "Menu", k6p: "Auto-switching, double Shift, start at login, exceptions, “Support the project…”: a donation via lava.top.",
     h_notes: "Good to know",
     n1: "<b>No dictionary.</b> Words are judged by Russian and English spelling rules, so misses can happen.",
     n2: "<b>Terminals</b> are left alone. Exclude any other app with an <span class='mono'>@name</span> line in the exceptions.",

@@ -1,0 +1,97 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<!-- Source of docs/demo.png and docs/demo-en.png (top of the README). Render: tools/make_billboard.ps1 -->
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1200px; height: 560px; overflow: hidden; }
+  body {
+    font-family: "Segoe UI Variable Text", "Segoe UI", sans-serif;
+    color: #e8eaee;
+    background: radial-gradient(1200px 700px at 15% 0%, #232a36 0%, #151920 55%, #101318 100%);
+    padding: 50px 60px 0;
+    position: relative;
+  }
+  .mono { font-family: "Cascadia Mono", Consolas, monospace; }
+
+  header { display: flex; align-items: center; gap: 22px; }
+  header img { width: 150px; height: 150px; margin: -34px -6px -34px -8px; }   /* the toggle fills the middle of the square */
+  h1 { font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif; font-size: 54px; font-weight: 600; letter-spacing: -0.5px; line-height: 1.1; }
+  h1 span { font-weight: 300; color: #c9ced6; }
+  .sub { font-size: 21px; color: #9aa3af; margin-top: 4px; line-height: 1.35; }
+
+  .rows { margin-top: 36px; display: grid; grid-template-columns: 250px 74px 250px; row-gap: 20px; align-items: center; }
+  .from, .to { height: 64px; border-radius: 12px; display: flex; align-items: center; padding: 0 24px; font-size: 30px; }
+  .from { background: #1d222b; border: 1px solid #2c333e; color: #7c8491; }
+  .to { background: #1a2230; border: 2px solid #6fc3ef; color: #f2f4f7; }
+  .arrow { color: #6fc3ef; font-size: 26px; text-align: center; }
+
+  .hint { position: absolute; left: 60px; bottom: 44px; font-size: 17px; color: #6b7380; }
+  .hint i { font-style: normal; margin: 0 10px; color: #4b525d; }
+
+  .menu-wrap { position: absolute; left: 730px; top: 112px; width: 410px; }
+  .menu-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 0 4px; }
+  .menu-head span { font-size: 17px; color: #8c96a3; }
+  .menu-head img { width: 32px; height: 32px; }
+  .menu { background: #2b2b2b; border: 1px solid #3d3d3d; border-radius: 9px; padding: 8px 0; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45); }
+  .item { height: 44px; display: flex; align-items: center; font-size: 18.5px; color: #e8e8e8; padding-left: 56px; position: relative; }
+  .item.on::before { content: "✓"; position: absolute; left: 22px; color: #6fc3ef; font-size: 20px; }
+  .sep { height: 1px; background: #454545; margin: 8px 14px; }
+</style>
+</head>
+<body>
+<header>
+  <img src="../art/ls-256.png" alt="">
+  <div>
+    <h1>LiteSwitcher</h1>
+    <div class="sub" data-t="sub"></div>
+  </div>
+</header>
+
+<div class="rows mono">
+  <div class="from">ghbdtn</div><div class="arrow">→</div><div class="to">привет</div>
+  <div class="from">руддщ</div><div class="arrow">→</div><div class="to">hello</div>
+  <div class="from">cgfcb,j</div><div class="arrow">→</div><div class="to">спасибо</div>
+</div>
+
+<div class="hint"><span data-t="h1"></span><i>·</i><span data-t="h2"></span></div>
+
+<div class="menu-wrap">
+  <div class="menu-head"><span data-t="menu"></span><img src="../art/ls-32.png" alt=""></div>
+  <div class="menu">
+    <div class="item on" data-t="m1"></div>
+    <div class="item on" data-t="m2"></div>
+    <div class="item on" data-t="m3"></div>
+    <div class="item" data-t="m4"></div>
+    <div class="item" data-t="m5"></div>
+    <div class="sep"></div>
+    <div class="item" data-t="m6"></div>
+    <div class="item" data-t="m7"></div>
+  </div>
+</div>
+
+<script>
+// Menu items are the Windows tray menu, word for word as in windows/main.cpp.
+const T = {
+  ru: {
+    sub: "Лёгкий и компактный переключатель языка.<br>Запустил — забыл, он работает!",
+    h1: "Пробел — исправить автоматически", h2: "Pause или двойной Shift — вручную",
+    menu: "Меню в трее",
+    m1: "Автопереключение", m2: "Двойной Shift — исправить", m3: "Запускать вместе с Windows",
+    m4: "Исключения…", m5: "Перечитать исключения", m6: "Поддержать проект…", m7: "Выход",
+  },
+  en: {
+    sub: "A light, compact keyboard layout switcher.<br>Start it and forget it: it just works!",
+    h1: "Space — fixed automatically", h2: "Pause or double Shift — fix it yourself",
+    menu: "Tray menu",
+    m1: "Auto-switching", m2: "Double Shift to fix", m3: "Start with Windows",
+    m4: "Exceptions…", m5: "Reload exceptions", m6: "Support the project…", m7: "Exit",
+  },
+};
+const t = T[location.search.includes("en") ? "en" : "ru"];
+document.documentElement.lang = location.search.includes("en") ? "en" : "ru";
+document.querySelectorAll("[data-t]").forEach(e => e.innerHTML = t[e.dataset.t]);
+</script>
+</body>
+</html>

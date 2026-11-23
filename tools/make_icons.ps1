@@ -1,6 +1,9 @@
-﻿# Builds the app icons from art/ls-<size>.png:
-#   windows/LS.ico      — 16…64 as BMP frames (rc.exe takes PNG frames only at 256×256) + 256 as PNG
+﻿# Builds the app icons from art/ls-<size>.png (the "LS toggle, Graphite" artwork; art/ls.svg is the
+# master drawing, art/ls-small.svg the bolder variant the 16–32 px PNGs are drawn from):
+#   windows/LS.ico      — all 16 Windows 11 sizes: up to 48 px as plain BMP frames (tray, menus, small views),
+#                         60…256 px as PNG frames to keep LS.exe small
 #   macos/LS.iconset/   — PNG set for iconutil (the .icns itself is made on the Mac by macos/build.sh)
+# A size with no PNG in art/ is scaled down from art/ls-1024.png.
 # Run from anywhere: powershell -File tools/make_icons.ps1
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
@@ -10,8 +13,8 @@ $art = Join-Path $root 'art'
 function Load([int]$size) {
     $p = Join-Path $art "ls-$size.png"
     if (Test-Path $p) { return [System.Drawing.Bitmap]::new($p) }
-    # missing size: scale down the 256 master
-    $src = [System.Drawing.Bitmap]::new((Join-Path $art 'ls-256.png'))
+    # missing size: scale down the 1024 master
+    $src = [System.Drawing.Bitmap]::new((Join-Path $art 'ls-1024.png'))
     $bmp = [System.Drawing.Bitmap]::new($size, $size, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
     $g = [System.Drawing.Graphics]::FromImage($bmp)
     $g.InterpolationMode = 'HighQualityBicubic'; $g.PixelOffsetMode = 'HighQuality'; $g.CompositingQuality = 'HighQuality'
@@ -45,10 +48,10 @@ function PngBytes([System.Drawing.Bitmap]$bmp) {
 }
 
 # ---------------------------------------------------------------- Windows .ico
-$sizes = 16, 20, 24, 32, 40, 48, 64, 256
+$sizes = 16, 20, 24, 30, 32, 36, 40, 48, 60, 64, 72, 80, 96, 128, 192, 256
 $frames = foreach ($s in $sizes) {
     $b = Load $s
-    [byte[]]$bytes = if ($s -eq 256) { PngBytes $b } else { DibBytes $b }
+    [byte[]]$bytes = if ($s -gt 48) { PngBytes $b } else { DibBytes $b }
     $b.Dispose()
     , @($s, $bytes)
 }
@@ -72,7 +75,8 @@ $bw.Flush()
 $set = Join-Path $root 'macos\LS.iconset'
 New-Item -ItemType Directory -Force $set | Out-Null
 $names = @{ 'icon_16x16.png' = 16; 'icon_16x16@2x.png' = 32; 'icon_32x32.png' = 32; 'icon_32x32@2x.png' = 64;
-            'icon_128x128.png' = 128; 'icon_128x128@2x.png' = 256; 'icon_256x256.png' = 256 }
+            'icon_128x128.png' = 128; 'icon_128x128@2x.png' = 256; 'icon_256x256.png' = 256;
+            'icon_256x256@2x.png' = 512; 'icon_512x512.png' = 512; 'icon_512x512@2x.png' = 1024 }
 foreach ($n in $names.Keys) {
     $b = Load $names[$n]
     $b.Save((Join-Path $set $n), [System.Drawing.Imaging.ImageFormat]::Png)
