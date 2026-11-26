@@ -2,7 +2,7 @@
 
 **Русский** · [English](#privacy-policy)
 
-Редакция от 26 ноября 2026 г., для FastRevers 2.2. До версии 2.2 программа называлась LiteSwitcher, до 2.1 — LS. Прежние редакции — в истории этого файла в git.
+Редакция от 27 ноября 2026 г., для FastRevers 2.2. До версии 2.2 программа называлась LiteSwitcher, до 2.1 — LS. Прежние редакции — в истории этого файла в git.
 
 ## Кто отвечает
 
@@ -36,10 +36,11 @@ This program will not transfer any information to other networked systems unless
 - **GitHub** — скачивание программы и Issues. Действует [политика конфиденциальности GitHub](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement).
 - **lava.top** — добровольный донат по пункту «Поддержать проект (lava.top)…». Платёж принимает платформа lava.top (LAVALANE LTD, Кипр). Данные плательщика обрабатывают она и её платёжные провайдеры по своим правилам: <https://lava.top/docs/terms>.
 
-## Сайт u-said.github.io/FastRevers
+## Сайт fastrevers.com
 
-- Сайт размещён на GitHub Pages у GitHub, Inc. (США). GitHub получает ваш IP-адрес и данные браузера, когда вы открываете страницу или скачиваете файл (файлы скачиваются с github.com). Политика GitHub: <https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement>.
-- На сайте нет счётчиков статистики и cookies. Сведений о посетителях автор не получает; GitHub показывает автору только общее число скачиваний каждого файла.
+- Сайт обслуживает Cloudflare, Inc. (США): страницы отдаются через его сеть. Cloudflare получает ваш IP-адрес и данные браузера, когда вы открываете страницу. Политика Cloudflare: <https://www.cloudflare.com/privacypolicy/>.
+- Файлы программы скачиваются с github.com, их получает GitHub по своей политике (см. «Сторонние сервисы»).
+- На сайте нет счётчиков статистики, внешних скриптов и cookies. Автор видит только общие цифры: в Cloudflare — число посещений и страны, в GitHub — число скачиваний каждого файла; сведений об отдельных посетителях у автора нет.
 
 ## Дети
 
@@ -59,7 +60,7 @@ This program will not transfer any information to other networked systems unless
 
 [Русский](#конфиденциальность-fastrevers) · **English**
 
-Version of 26 November 2026, for FastRevers 2.2. Before version 2.2 the app was called LiteSwitcher, and LS before 2.1. Earlier versions are in this file's git history.
+Version of 27 November 2026, for FastRevers 2.2. Before version 2.2 the app was called LiteSwitcher, and LS before 2.1. Earlier versions are in this file's git history.
 
 ## Who is responsible
 
@@ -93,10 +94,11 @@ On Windows FastRevers skips classic password boxes. It cannot detect password fi
 - **GitHub**: downloads and Issues, under [GitHub's privacy statement](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement).
 - **lava.top**: voluntary donations from “Support the project (lava.top)…”. The payment is accepted by the lava.top platform (LAVALANE LTD, Cyprus); payer data is processed by it and its payment providers under their own terms: <https://lava.top/docs/terms>.
 
-## Website u-said.github.io/FastRevers
+## Website fastrevers.com
 
-- The website is hosted on GitHub Pages by GitHub, Inc. (USA). GitHub receives your IP address and browser data when you open the page or download a file (files are downloaded from github.com). See the GitHub Privacy Statement: <https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement>.
-- The website has no statistics script and sets no cookies. The author receives no data about visitors; GitHub only shows the author the total number of downloads of each file.
+- The website is served by Cloudflare, Inc. (USA) through its network. Cloudflare receives your IP address and browser data when you open a page. See the Cloudflare Privacy Policy: <https://www.cloudflare.com/privacypolicy/>.
+- The app's files are downloaded from github.com and received by GitHub under its own policy (see “Third-party services”).
+- The website has no statistics script, no third-party scripts and sets no cookies. The author sees only totals: visits and countries in Cloudflare, downloads per file on GitHub; nothing about individual visitors.
 
 ## Children
 

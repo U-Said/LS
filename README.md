@@ -2,7 +2,7 @@
 
 <img src="docs/fastrevers-tablo.gif" width="200" alt="FastRevers">
 
-**Русский** · [English](#english)
+**Русский** · [English](#english) · Сайт: [fastrevers.com](https://fastrevers.com)
 
 **FastRevers™** — лёгкий переключатель раскладки RU/EN для Windows и macOS, альтернатива Punto Switcher. Одна маленькая программа без установки: скачали, распаковали, запустили.
 
