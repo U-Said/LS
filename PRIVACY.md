@@ -36,6 +36,11 @@ This program will not transfer any information to other networked systems unless
 - **GitHub** — скачивание программы и Issues. Действует [политика конфиденциальности GitHub](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement).
 - **lava.top** — добровольный донат по пункту «Поддержать проект (lava.top)…». Платёж принимает платформа lava.top (LAVALANE LTD, Кипр). Данные плательщика обрабатывают она и её платёжные провайдеры по своим правилам: <https://lava.top/docs/terms>.
 
+## Сайт u-said.github.io/LiteSwitcher
+
+- Сайт размещён на GitHub Pages у GitHub, Inc. (США). GitHub получает ваш IP-адрес и данные браузера, когда вы открываете страницу или скачиваете файл (файлы скачиваются с github.com). Политика GitHub: <https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement>.
+- На сайте нет счётчиков статистики и cookies. Сведений о посетителях автор не получает; GitHub показывает автору только общее число скачиваний каждого файла.
+
 ## Дети
 
 Программа не собирает данные ни о ком, в том числе о детях.
@@ -87,6 +92,11 @@ On Windows LiteSwitcher skips classic password boxes. It cannot detect password 
 
 - **GitHub**: downloads and Issues, under [GitHub's privacy statement](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement).
 - **lava.top**: voluntary donations from “Support the project (lava.top)…”. The payment is accepted by the lava.top platform (LAVALANE LTD, Cyprus); payer data is processed by it and its payment providers under their own terms: <https://lava.top/docs/terms>.
+
+## Website u-said.github.io/LiteSwitcher
+
+- The website is hosted on GitHub Pages by GitHub, Inc. (USA). GitHub receives your IP address and browser data when you open the page or download a file (files are downloaded from github.com). See the GitHub Privacy Statement: <https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement>.
+- The website has no statistics script and sets no cookies. The author receives no data about visitors; GitHub only shows the author the total number of downloads of each file.
 
 ## Children
 

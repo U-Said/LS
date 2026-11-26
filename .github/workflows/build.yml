@@ -192,6 +192,18 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           ls -l LiteSwitcher-*.zip
+          sha256sum LiteSwitcher-*.zip > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          {
+            echo "LiteSwitcher ${TAG#v}"
+            echo
+            echo "Official builds are published only at https://github.com/U-Said/LiteSwitcher/releases."
+            echo
+            echo "SHA-256:"
+            echo '```'
+            cat SHA256SUMS.txt
+            echo '```'
+          } > notes.md
           gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
-            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "LiteSwitcher ${TAG#v}" --notes "LiteSwitcher ${TAG#v}" --latest
-          gh release upload "$TAG" LiteSwitcher-*.zip --repo "$GITHUB_REPOSITORY" --clobber
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "LiteSwitcher ${TAG#v}" --notes-file notes.md --latest
+          gh release upload "$TAG" LiteSwitcher-*.zip SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --clobber

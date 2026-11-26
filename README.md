@@ -20,6 +20,8 @@
 
 Ничего дополнительно ставить не нужно: ни AutoHotkey, ни Hammerspoon, ни библиотек.
 
+**Официальные сборки — только на странице [Releases](https://github.com/U-Said/LiteSwitcher/releases) этого репозитория.** Не скачивайте LiteSwitcher с других сайтов и из чужих репозиториев. Контрольные суммы SHA-256 каждого выпуска лежат в файле `SHA256SUMS.txt` рядом с архивами. Проверить архив в Windows: `Get-FileHash LiteSwitcher-Windows.zip` в PowerShell, на Mac: `shasum -a 256 LiteSwitcher-macOS.zip`.
+
 [Конфиденциальность](PRIVACY.md) · [Политика подписи кода](CODE_SIGNING.md) · [Безопасность](SECURITY.md) · [Удаление](#удаление)
 
 ## Коротко
@@ -149,6 +151,8 @@ Typed `ghbdtn` when you meant «привет»? LiteSwitcher notices it when you
 | **macOS 11+**, Apple Silicon and Intel | [LiteSwitcher-macOS.zip](https://github.com/U-Said/LiteSwitcher/releases/latest/download/LiteSwitcher-macOS.zip) |
 
 Nothing else to install: no AutoHotkey, no Hammerspoon, no libraries.
+
+**Official builds are published only on this repository's [Releases](https://github.com/U-Said/LiteSwitcher/releases) page.** Do not download LiteSwitcher from other sites or other repositories. The SHA-256 checksums of every release are in `SHA256SUMS.txt` next to the archives. To check an archive on Windows: `Get-FileHash LiteSwitcher-Windows.zip` in PowerShell; on a Mac: `shasum -a 256 LiteSwitcher-macOS.zip`.
 
 [Privacy](PRIVACY.md#privacy-policy) · [Code signing policy](CODE_SIGNING.md) · [Security](SECURITY.md#security-policy) · [Uninstall](#uninstall)
 
