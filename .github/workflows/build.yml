@@ -1,5 +1,5 @@
-# Builds LiteSwitcher for Windows x64, Windows ARM64 and macOS (universal), runs the self-tests.
-# A tag v* also publishes the archives to a GitHub release of this repository.
+# Builds LiteSwitcher for Windows x64, Windows ARM64 and macOS (universal), runs the self-tests and makes the
+# Microsoft Store package. A tag v* also publishes the archives to a GitHub release of this repository.
 name: Build
 
 on:
@@ -51,6 +51,40 @@ jobs:
           'LiteSwitcher.exe: {0:N0} bytes, machine 0x{1:X4}' -f $b.Length, $machine
           if ($machine -ne ${{ matrix.machine }}) { throw 'wrong architecture' }
 
+      # Code signing by SignPath Foundation (free for open source), only for releases. It stays off until the
+      # repository has the variables SIGNPATH_ORGANIZATION_ID, SIGNPATH_PROJECT_SLUG, SIGNPATH_POLICY_SLUG and the
+      # secret SIGNPATH_API_TOKEN. The SignPath artifact configuration: <zip-file> with <pe-file path="LiteSwitcher.exe">.
+      # Every signing request waits for a manual approval in SignPath.
+      - name: Upload the unsigned exe for signing
+        id: unsigned
+        if: vars.SIGNPATH_ORGANIZATION_ID != '' && startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-${{ matrix.arch }}
+          path: build/Release/LiteSwitcher.exe
+          retention-days: 1
+
+      - name: Sign (SignPath)
+        if: steps.unsigned.outcome == 'success'
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG }}
+          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed
+
+      - name: Use the signed exe
+        if: steps.unsigned.outcome == 'success'
+        shell: pwsh
+        run: |
+          $sig = Get-AuthenticodeSignature signed\LiteSwitcher.exe
+          "signature: $($sig.Status), $($sig.SignerCertificate.Subject)"
+          if ($sig.Status -ne 'Valid') { throw 'the signed exe has no valid signature' }
+          Copy-Item signed\LiteSwitcher.exe build\Release\LiteSwitcher.exe -Force
+
       - name: Package
         shell: pwsh
         run: Compress-Archive -Path build\Release\LiteSwitcher.exe -DestinationPath ${{ matrix.zip }}
@@ -96,6 +130,43 @@ jobs:
           name: menubar-icon
           path: menubar-icon.png
           retention-days: 7
+
+  # Microsoft Store package (x64 + ARM64 bundle) made from the two exe above. It is not a release file: it goes to
+  # Partner Center, which signs it. The identity comes from Partner Center > Product identity, kept in the
+  # repository variables MSIX_IDENTITY_NAME, MSIX_PUBLISHER, MSIX_PUBLISHER_NAME (without them: a test identity).
+  msix:
+    name: Microsoft Store package
+    needs: windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: LiteSwitcher-Windows*.zip
+          path: zips
+          merge-multiple: true
+
+      - name: Build the MSIX bundle
+        shell: powershell
+        env:
+          MSIX_IDENTITY_NAME: ${{ vars.MSIX_IDENTITY_NAME }}
+          MSIX_PUBLISHER: ${{ vars.MSIX_PUBLISHER }}
+          MSIX_PUBLISHER_NAME: ${{ vars.MSIX_PUBLISHER_NAME }}
+        run: |
+          Expand-Archive zips\LiteSwitcher-Windows.zip x64
+          Expand-Archive zips\LiteSwitcher-Windows-arm64.zip arm64
+          $id = @{}
+          if ($env:MSIX_IDENTITY_NAME) { $id.IdentityName = $env:MSIX_IDENTITY_NAME }
+          if ($env:MSIX_PUBLISHER) { $id.Publisher = $env:MSIX_PUBLISHER }
+          if ($env:MSIX_PUBLISHER_NAME) { $id.PublisherDisplayName = $env:MSIX_PUBLISHER_NAME }
+          & .\tools\make_msix.ps1 -Exe x64\LiteSwitcher.exe -ExeArm64 arm64\LiteSwitcher.exe -OutDir msix @id
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LiteSwitcher-msixbundle
+          path: msix/LiteSwitcher-*.msixbundle
+          retention-days: 30
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')

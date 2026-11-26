@@ -36,6 +36,8 @@
 
 **Обновление.** Значок LiteSwitcher → **Выход**, замените `LiteSwitcher.exe` новым и запустите.
 
+**Удаление.** В меню значка снимите **Запускать вместе с Windows**, нажмите **Выход** и удалите папку с программой. Больше LiteSwitcher ничего в системе не оставляет.
+
 **Переход с LS 2.0.** До версии 2.1 программа называлась LS. Положите `LiteSwitcher.exe` в папку, где лежит `LS.exe`, и запустите: LiteSwitcher сам закроет LS и заберёт его настройки, исключения и автозапуск. После этого `LS.exe` можно удалить.
 
 **Переход с версии на AutoHotkey.** Положите `LiteSwitcher.exe` в ту же папку, где был `LS.ahk`: исключения подхватятся, старый скрипт закроется сам, а его автозапуск заменится новым.
@@ -61,6 +63,8 @@
 5. Чтобы LiteSwitcher запускался сам, включите в его меню **Запускать при входе в систему**.
 
 После обновления macOS может перестать считать LiteSwitcher доверенным. Тогда удалите его из **Универсального доступа** кнопкой «−» и включите снова.
+
+**Удаление.** В меню LiteSwitcher снимите **Запускать при входе в систему** и выберите **Выйти из LiteSwitcher**. Перетащите LiteSwitcher.app в Корзину, уберите его из **Универсального доступа** кнопкой «−» и удалите папку `~/Library/Application Support/LiteSwitcher` с исключениями.
 
 **Переход с LS 2.0.** Перетащите LiteSwitcher.app в «Программы» и откройте: он сам закроет LS и заберёт его настройки, исключения и запуск при входе. Затем удалите LS.app в Корзину, а строку LS в **Универсальном доступе** — кнопкой «−», и включите там LiteSwitcher.
 
@@ -96,6 +100,12 @@ LiteSwitcher бесплатный, без рекламы и с открытым 
 - **macOS** (Xcode Command Line Tools): `bash macos/build.sh`, проверка: `build/macos/LiteSwitcher.app/Contents/MacOS/LiteSwitcher --selftest`.
 - Логика распознавания общая для обеих систем: `core/ls_core.c`. Прежние версии-скрипты лежат в `legacy/`.
 
+## Политика подписи кода (Code signing policy)
+
+- Выпуски собирает только GitHub Actions из этого репозитория ([build.yml](.github/workflows/build.yml)), а не чей-то компьютер.
+- Изменения вносит и проверяет [U-Said](https://github.com/U-Said); чужие изменения (pull requests) он проверяет перед принятием. Подпись каждого выпуска утверждает тоже [U-Said](https://github.com/U-Said).
+- Конфиденциальность: программа ничего не передаёт по сети, пока пользователь сам этого не попросит. Единственное такое действие — пункт «Поддержать проект…», он открывает страницу доната в браузере.
+
 ---
 
 ## English
@@ -128,6 +138,8 @@ Nothing else to install: no AutoHotkey, no Hammerspoon, no libraries.
 2. The LiteSwitcher icon appears next to the clock. To start it automatically, tick **Start with Windows** in its menu.
 3. Settings (`LiteSwitcher.ini`) and exceptions (`exceptions.txt`) are kept next to `LiteSwitcher.exe`. No admin rights needed.
 
+**Uninstall.** Untick **Start with Windows** in the icon's menu, choose **Exit** and delete the folder. LiteSwitcher leaves nothing else behind.
+
 **Usage.** Space fixes a word typed in the wrong layout. `Pause` or a double `Shift` converts the last word (again to revert). `Shift+Pause`, or a double `Shift` with no fresh word, converts the selected text; the clipboard is restored afterwards. Undoing a wrong auto-fix adds the word to `exceptions.txt`.
 
 **Coming from LS 2.0?** Up to version 2.1 the app was called LS. Put `LiteSwitcher.exe` into the folder with `LS.exe` and run it: LiteSwitcher closes LS and takes over its settings, exceptions and autostart. You can delete `LS.exe` afterwards.
@@ -145,6 +157,8 @@ Nothing else to install: no AutoHotkey, no Hammerspoon, no libraries.
 5. To start LiteSwitcher automatically, tick **Open at login** in its menu.
 
 After an update macOS may stop trusting LiteSwitcher: remove it from **Accessibility** with “−” and enable it again.
+
+**Uninstall.** Untick **Open at login** in the LiteSwitcher menu and quit it. Move LiteSwitcher.app to the Trash, remove it from **Accessibility** with “−” and delete `~/Library/Application Support/LiteSwitcher` (the exceptions).
 
 **Coming from LS 2.0?** Drag LiteSwitcher.app to Applications and open it: it closes LS and takes over its settings, exceptions and login item. Then move LS.app to the Trash, remove LS from **Accessibility** with “−” and enable LiteSwitcher there.
 
@@ -173,6 +187,13 @@ LiteSwitcher is free, ad-free and open source. If it is useful to you, you can s
 - **Windows** (Visual Studio 2022 with C++): `cmake -S . -B build -A x64` (or `-A ARM64`), then `cmake --build build --config Release`.
 - **macOS** (Xcode Command Line Tools): `bash macos/build.sh`.
 - The detector is shared by both apps: `core/ls_core.c`. The old script versions are in `legacy/`.
+
+## Code signing policy
+
+- Releases are built only by GitHub Actions from this repository ([build.yml](.github/workflows/build.yml)), never on a personal computer.
+- Committers and reviewers: [U-Said](https://github.com/U-Said). Changes from other people (pull requests) are reviewed before they are merged.
+- Approvers: [U-Said](https://github.com/U-Said) approves the signing of every release.
+- Privacy: This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it. The only such action is the «Support the project…» menu item, which opens the donation page in your browser.
 
 ## License
 

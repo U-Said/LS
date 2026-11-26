@@ -1,8 +1,10 @@
 ﻿# End-to-end check of LiteSwitcher.exe on this PC: starts it, opens a test window and "types" into it with
 # scan codes, exactly like a physical keyboard. Needs the Russian and English (US) layouts.
 #   powershell -STA -File tools/e2e_windows.ps1 -Exe build\Release\LiteSwitcher.exe
+# For the Store package installed from a test layout (tools/make_msix.ps1) also give its app id; the exe is then
+# <layout>\LiteSwitcher.exe:  -Aumid "<PackageFamilyName>!LiteSwitcher"
 # Takes about 20 seconds; do not type while it runs. Your clipboard is left as it was.
-param([Parameter(Mandatory)][string]$Exe)
+param([Parameter(Mandatory)][string]$Exe, [string]$Aumid)
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type @"
@@ -79,11 +81,20 @@ function Check([string]$what, [string]$want, [string]$wantLayout) {
 
 $exe = (Resolve-Path $Exe).Path
 $dir = Split-Path $exe
+if ($Aumid) { $dir = Join-Path $env:LOCALAPPDATA "Packages\$($Aumid.Split('!')[0])\LocalState" }   # the package's data folder
 $excFile = Join-Path $dir 'exceptions.txt'
 Remove-Item $excFile -ErrorAction SilentlyContinue
-Get-Process ([IO.Path]::GetFileNameWithoutExtension($exe)) -ErrorAction SilentlyContinue | Where-Object Path -eq $exe | Stop-Process -Force
-$ls = Start-Process $exe -PassThru
-Start-Sleep -Milliseconds 1200
+$name = [IO.Path]::GetFileNameWithoutExtension($exe)
+Get-Process $name -ErrorAction SilentlyContinue | Where-Object Path -eq $exe | Stop-Process -Force
+if ($Aumid) {
+    Start-Process "shell:AppsFolder\$Aumid"
+    Start-Sleep -Milliseconds 1500
+    $ls = Get-Process $name -ErrorAction SilentlyContinue | Where-Object Path -eq $exe | Select-Object -First 1
+    if (-not $ls) { throw "the package $Aumid did not start $exe" }
+} else {
+    $ls = Start-Process $exe -PassThru
+    Start-Sleep -Milliseconds 1200
+}
 
 $clipBefore = if ([System.Windows.Forms.Clipboard]::ContainsText()) { [System.Windows.Forms.Clipboard]::GetText() } else { $null }
 $form = New-Object System.Windows.Forms.Form

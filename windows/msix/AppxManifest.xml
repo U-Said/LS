@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MSIX package of LiteSwitcher for the Microsoft Store. tools/make_msix.ps1 fills in the {{...}} values:
+     the identity comes from Partner Center (Product identity), the version from CMakeLists.txt. -->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap desktop rescap">
+
+  <Identity Name="{{IdentityName}}" Publisher="{{Publisher}}" Version="{{Version}}" ProcessorArchitecture="{{Arch}}" />
+
+  <Properties>
+    <DisplayName>LiteSwitcher</DisplayName>
+    <PublisherDisplayName>{{PublisherDisplayName}}</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-us" />
+    <Resource Language="ru-ru" />
+  </Resources>
+
+  <Applications>
+    <Application Id="LiteSwitcher" Executable="LiteSwitcher.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements DisplayName="LiteSwitcher"
+        Description="Fixes text typed in the wrong RU/EN keyboard layout."
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile ShortName="LiteSwitcher" />
+      </uap:VisualElements>
+      <Extensions>
+        <!-- Start with Windows: off until the user ticks it in the LiteSwitcher menu. -->
+        <desktop:Extension Category="windows.startupTask" Executable="LiteSwitcher.exe" EntryPoint="Windows.FullTrustApplication">
+          <desktop:StartupTask TaskId="LiteSwitcherStartup" Enabled="false" DisplayName="LiteSwitcher" />
+        </desktop:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>

@@ -1,12 +1,18 @@
 // LiteSwitcher for Windows: fixes text typed in the wrong RU/EN keyboard layout.
-// One native .exe: no installer, no runtime, settings are kept next to the exe.
+// One native .exe: no installer, no runtime, settings are kept next to the exe. The same exe also runs
+// from the Microsoft Store package (MSIX): then settings live in the package's data folder.
 //   Space                  - a word typed in the wrong layout is fixed automatically
 //   Pause or double Shift  - fix the last word (again - revert); with no fresh word, fix the selected text
 //   Shift+Pause            - fix the selected text
 #include <windows.h>
+#include <appmodel.h>
 #include <commctrl.h>
+#include <roapi.h>
 #include <shellapi.h>
 #include <shlobj.h>
+#include <windows.applicationmodel.h>
+#include <wrl/client.h>
+#include <wrl/wrappers/corewrappers.h>
 
 #include <algorithm>
 #include <deque>
@@ -28,6 +34,7 @@ const wchar_t kRunKey[] = L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
 const wchar_t kApprovedKey[] = L"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run";
 const wchar_t kRunName[] = L"LiteSwitcher";
 const wchar_t kOldRunName[] = L"LS";  // up to 2.0.x the program was LS.exe with LS.ini and this autostart name
+const wchar_t kStartupTaskId[] = L"LiteSwitcherStartup";  // windows.startupTask in windows/msix/AppxManifest.xml
 const char kTerminals[] =
     "windowsterminal cmd powershell pwsh conhost openconsole putty kitty mintty alacritty wezterm-gui mobaxterm tabby hyper";
 
@@ -55,7 +62,8 @@ HINSTANCE g_inst;
 HWND g_wnd;
 HHOOK g_kbd, g_mouse;
 UINT g_taskbarCreated;
-bool g_ru;  // Russian UI
+bool g_ru;        // Russian UI
+bool g_packaged;  // runs from the Microsoft Store package (MSIX)
 std::wstring g_exe, g_dir, g_ini, g_exc;
 bool g_optAuto = true, g_optShift = true;
 FILETIME g_excTime{};
@@ -134,12 +142,45 @@ void AdoptOld(const std::wstring &oldPath, const std::wstring &newPath)
     if (!Exists(newPath) && Exists(oldPath)) MoveFileW(oldPath.c_str(), newPath.c_str());
 }
 
+bool IsPackaged()
+{
+    UINT32 n = 0;
+    return GetCurrentPackageFullName(&n, nullptr) == ERROR_INSUFFICIENT_BUFFER;
+}
+
+// The package's own data folder, %LOCALAPPDATA%\Packages\<family>\LocalState. It is a real folder, so
+// Notepad (outside the package) opens exceptions.txt there; plain AppData writes of a packaged app would
+// be redirected into a private copy that Notepad does not see.
+std::wstring PackageDataDir()
+{
+    UINT32 n = 0;
+    if (GetCurrentPackageFamilyName(&n, nullptr) != ERROR_INSUFFICIENT_BUFFER || !n) return {};
+    std::wstring family(n, L'\0');
+    if (GetCurrentPackageFamilyName(&n, family.data()) != ERROR_SUCCESS) return {};
+    family.resize(wcslen(family.c_str()));
+    std::wstring dir;
+    PWSTR local = nullptr;
+    if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &local)))
+        dir = std::wstring(local) + L"\\Packages\\" + family + L"\\LocalState";
+    CoTaskMemFree(local);
+    return dir;
+}
+
 void InitPaths()
 {
     wchar_t buf[MAX_PATH * 4];
     DWORD n = GetModuleFileNameW(nullptr, buf, ARRAYSIZE(buf));
     g_exe.assign(buf, n);
     g_dir = g_exe.substr(0, g_exe.find_last_of(L"\\/"));
+    g_packaged = IsPackaged();
+    std::wstring packageDir = g_packaged ? PackageDataDir() : std::wstring();
+    if (!packageDir.empty()) {  // Microsoft Store: the program folder is read-only
+        g_dir = packageDir;
+        CreateDirectoryW(g_dir.c_str(), nullptr);
+        g_ini = g_dir + L"\\LiteSwitcher.ini";
+        g_exc = g_dir + L"\\exceptions.txt";
+        return;
+    }
     // Portable: settings live next to LiteSwitcher.exe. If that folder is read-only, fall back to
     // %APPDATA%\LiteSwitcher.
     AdoptOld(g_dir + L"\\LS.ini", g_dir + L"\\LiteSwitcher.ini");
@@ -753,8 +794,76 @@ LRESULT CALLBACK MouseProc(int code, WPARAM wp, LPARAM lp)
 // ------------------------------------------------------------------ start with Windows
 std::wstring Quoted(const std::wstring &s) { return L"\"" + s + L"\""; }
 
+void Balloon(const wchar_t *title, const wchar_t *text);
+
+// The Store package cannot use the Run key (its registry writes stay inside the package): it starts with
+// Windows through its startup task. The WinRT calls run on a helper thread in the multithreaded apartment,
+// so the UI thread needs no COM; each call takes a few milliseconds.
+namespace startup_task {
+namespace AM = ABI::Windows::ApplicationModel;
+namespace WF = ABI::Windows::Foundation;
+using Microsoft::WRL::ComPtr;
+using Microsoft::WRL::Wrappers::HStringReference;
+
+enum class Op { Query, Enable, Disable };
+struct Job {
+    Op op;
+    int state;  // AM::StartupTaskState after the call, -1 when the task could not be reached
+};
+
+bool Wait(IUnknown *operation)
+{
+    ComPtr<WF::IAsyncInfo> info;
+    if (FAILED(operation->QueryInterface(IID_PPV_ARGS(&info)))) return false;
+    WF::AsyncStatus s = WF::AsyncStatus::Started;
+    for (int i = 0; i < 1000 && SUCCEEDED(info->get_Status(&s)) && s == WF::AsyncStatus::Started; i++) Sleep(10);
+    return s == WF::AsyncStatus::Completed;
+}
+
+DWORD WINAPI Thread(void *param)
+{
+    Job &job = *static_cast<Job *>(param);
+    if (FAILED(RoInitialize(RO_INIT_MULTITHREADED))) return 0;
+    {
+        ComPtr<AM::IStartupTaskStatics> statics;
+        ComPtr<WF::IAsyncOperation<AM::StartupTask *>> get;
+        ComPtr<AM::IStartupTask> task;
+        AM::StartupTaskState state;
+        if (SUCCEEDED(RoGetActivationFactory(HStringReference(RuntimeClass_Windows_ApplicationModel_StartupTask).Get(),
+                                             IID_PPV_ARGS(&statics))) &&
+            SUCCEEDED(statics->GetAsync(HStringReference(kStartupTaskId).Get(), &get)) && Wait(get.Get()) &&
+            SUCCEEDED(get->GetResults(&task))) {
+            if (job.op == Op::Enable) {
+                ComPtr<WF::IAsyncOperation<AM::StartupTaskState>> request;
+                if (SUCCEEDED(task->RequestEnableAsync(&request)) && Wait(request.Get()) &&
+                    SUCCEEDED(request->GetResults(&state)))
+                    job.state = state;
+            } else {
+                if (job.op == Op::Disable) task->Disable();
+                if (SUCCEEDED(task->get_State(&state))) job.state = state;
+            }
+        }
+    }
+    RoUninitialize();
+    return 0;
+}
+
+int Call(Op op)
+{
+    Job job{op, -1};
+    if (HANDLE t = CreateThread(nullptr, 0, Thread, &job, 0, nullptr)) {
+        WaitForSingleObject(t, INFINITE);  // Wait() gives up after 10 s
+        CloseHandle(t);
+    }
+    return job.state;
+}
+
+bool IsOn(int state) { return state == AM::StartupTaskState_Enabled || state == AM::StartupTaskState_EnabledByPolicy; }
+}  // namespace startup_task
+
 bool StartupEnabled()
 {
+    if (g_packaged) return startup_task::IsOn(startup_task::Call(startup_task::Op::Query));
     wchar_t value[MAX_PATH * 4];
     DWORD size = sizeof(value);
     if (RegGetValueW(HKEY_CURRENT_USER, kRunKey, kRunName, RRF_RT_REG_SZ, nullptr, value, &size) != ERROR_SUCCESS)
@@ -771,6 +880,17 @@ bool StartupEnabled()
 
 void SetStartup(bool on)
 {
+    if (g_packaged) {
+        using namespace startup_task;
+        if (!on) {
+            Call(Op::Disable);
+        } else if (!IsOn(Call(Op::Enable))) {  // switched off by the user in Windows settings: only they can undo it
+            Balloon(T(L"Автозапуск выключен в Windows", L"Startup is turned off in Windows"),
+                    T(L"Включите LiteSwitcher в «Параметры» → «Приложения» → «Автозагрузка».",
+                      L"Turn LiteSwitcher on in Settings > Apps > Startup."));
+        }
+        return;
+    }
     if (on) {
         std::wstring v = Quoted(g_exe);
         RegSetKeyValueW(HKEY_CURRENT_USER, kRunKey, kRunName, REG_SZ, v.c_str(), (DWORD)((v.size() + 1) * 2));
@@ -971,6 +1091,11 @@ LRESULT CALLBACK WndProc(HWND h, UINT msg, WPARAM wp, LPARAM lp)
     case WM_LS_RUN:
         RunActions();
         return 0;
+#ifdef LS_TEST_COMMANDS  // local test builds only: a test script picks menu items with WM_COMMAND
+    case WM_COMMAND:
+        OnCommand(LOWORD(wp));
+        return 0;
+#endif
     case WM_LS_HELLO:
         Balloon(T(L"LiteSwitcher уже запущен", L"LiteSwitcher is already running"),
                 T(L"Значок LiteSwitcher — в области уведомлений, у часов.",
@@ -1106,8 +1231,10 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int)
     ChangeWindowMessageFilterEx(g_wnd, g_taskbarCreated, MSGFLT_ALLOW, nullptr);
     ChangeWindowMessageFilterEx(g_wnd, WM_LS_HELLO, MSGFLT_ALLOW, nullptr);
     TrayAdd();
-    RetireScriptVersion();
-    AdoptOldStartup();
+    if (!g_packaged) {  // older portable versions have nothing to hand over to the Store package
+        RetireScriptVersion();
+        AdoptOldStartup();
+    }
 
     g_kbd = SetWindowsHookExW(WH_KEYBOARD_LL, KeyboardProc, inst, 0);
     g_mouse = SetWindowsHookExW(WH_MOUSE_LL, MouseProc, inst, 0);

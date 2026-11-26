@@ -13,7 +13,7 @@ extern "C" {
 
 typedef uint16_t ls_char;
 
-#define LS_VERSION "2.1.0"
+#define LS_VERSION "2.2.0"
 #define LS_DONATE_URL "https://app.lava.top/4179967925"
 
 /* en / ru: what the typed keys give in the English and in the Russian layout;
