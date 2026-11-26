@@ -1,5 +1,6 @@
 FastRevers Display Bold is derived from Noto Sans Bold.
 Copyright 2010, 2012–2020 Google Inc. and 2015–2020 Google LLC.
+Modifications copyright 2026 U-Said.
 The F and R were redrawn, and capital spacing and the widest capital glyphs were adjusted.
 
 SIL OPEN FONT LICENSE Version 1.1 — 26 February 2007
