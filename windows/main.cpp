@@ -1,4 +1,4 @@
-// LiteSwitcher for Windows: fixes text typed in the wrong RU/EN keyboard layout.
+// FastRevers for Windows: fixes text typed in the wrong RU/EN keyboard layout.
 // One native .exe: no installer, no runtime, settings are kept next to the exe. The same exe also runs
 // from the Microsoft Store package (MSIX): then settings live in the package's data folder.
 //   Space                  - a word typed in the wrong layout is fixed automatically
@@ -28,13 +28,22 @@ constexpr ULONG_PTR kMagic = 0x4C53;   // marks our own SendInput events so the 
 constexpr DWORD kTapMaxHold = 400;     // ms: a longer Shift press is not a tap
 constexpr DWORD kDoubleTapGap = 400;   // ms between the two taps of a double Shift
 constexpr WORD kLangEn = LANG_ENGLISH, kLangRu = LANG_RUSSIAN;
-const wchar_t kWndClass[] = L"LS_LiteSwitcher";
-const wchar_t kMutex[] = L"Local\\LS_LiteSwitcher";
+const wchar_t kWndClass[] = L"LS_LiteSwitcher";        // the same in every version since 2.0: one copy of any
+const wchar_t kMutex[] = L"Local\\LS_LiteSwitcher";     // of them runs, and an older one is found and closed
 const wchar_t kRunKey[] = L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
 const wchar_t kApprovedKey[] = L"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run";
-const wchar_t kRunName[] = L"LiteSwitcher";
-const wchar_t kOldRunName[] = L"LS";  // up to 2.0.x the program was LS.exe with LS.ini and this autostart name
-const wchar_t kStartupTaskId[] = L"LiteSwitcherStartup";  // windows.startupTask in windows/msix/AppxManifest.xml
+const wchar_t kRunName[] = L"FastRevers";
+const wchar_t kStartupTaskId[] = L"FastReversStartup";  // windows.startupTask in windows/msix/AppxManifest.xml
+
+// Earlier names of the program, newest first: 2.1.x was LiteSwitcher, 2.0.x was LS. Their settings and
+// autostart are taken over once; when both are there, the newer one wins.
+struct OldName {
+    const wchar_t *exe, *ini, *dir, *run;
+};
+const OldName kOldNames[] = {
+    {L"LiteSwitcher.exe", L"LiteSwitcher.ini", L"LiteSwitcher", L"LiteSwitcher"},
+    {L"LS.exe", L"LS.ini", L"LS", L"LS"},
+};
 const char kTerminals[] =
     "windowsterminal cmd powershell pwsh conhost openconsole putty kitty mintty alacritty wezterm-gui mobaxterm tabby hyper";
 
@@ -64,7 +73,8 @@ HHOOK g_kbd, g_mouse;
 UINT g_taskbarCreated;
 bool g_ru;        // Russian UI
 bool g_packaged;  // runs from the Microsoft Store package (MSIX)
-bool g_closedOld, g_adoptedFiles, g_adoptedStartup;  // what was taken over from LS 2.0.x at this start
+bool g_closedOld, g_adoptedFiles, g_adoptedStartup;  // what was taken over from an older version at this start
+const wchar_t *g_oldExe;                             // and the file name of that version
 std::wstring g_exe, g_dir, g_ini, g_exc;
 bool g_optAuto = true, g_optShift = true;
 FILETIME g_excTime{};
@@ -137,10 +147,19 @@ FILETIME FileTime(const std::wstring &path)
 
 bool Exists(const std::wstring &path) { return GetFileAttributesW(path.c_str()) != INVALID_FILE_ATTRIBUTES; }
 
-// Settings of the old name (LS.ini, %APPDATA%\LS) are taken over once, by renaming them.
-void AdoptOld(const std::wstring &oldPath, const std::wstring &newPath)
+// Settings of an older name (LiteSwitcher.ini, LS.ini, %APPDATA%\LiteSwitcher...) are taken over once, by
+// renaming them.
+bool AdoptOld(const std::wstring &oldPath, const std::wstring &newPath, const wchar_t *oldExe)
 {
-    if (!Exists(newPath) && Exists(oldPath) && MoveFileW(oldPath.c_str(), newPath.c_str())) g_adoptedFiles = true;
+    if (Exists(newPath) || !Exists(oldPath) || !MoveFileW(oldPath.c_str(), newPath.c_str())) return false;
+    g_adoptedFiles = true;
+    if (!g_oldExe) g_oldExe = oldExe;
+    return true;
+}
+
+void AdoptOldIni(const std::wstring &dir)
+{
+    for (const OldName &o : kOldNames) AdoptOld(dir + L"\\" + o.ini, dir + L"\\FastRevers.ini", o.exe);
 }
 
 bool IsPackaged()
@@ -178,14 +197,14 @@ void InitPaths()
     if (!packageDir.empty()) {  // Microsoft Store: the program folder is read-only
         g_dir = packageDir;
         CreateDirectoryW(g_dir.c_str(), nullptr);
-        g_ini = g_dir + L"\\LiteSwitcher.ini";
+        g_ini = g_dir + L"\\FastRevers.ini";
         g_exc = g_dir + L"\\exceptions.txt";
         return;
     }
-    // Portable: settings live next to LiteSwitcher.exe. If that folder is read-only, fall back to
-    // %APPDATA%\LiteSwitcher.
-    AdoptOld(g_dir + L"\\LS.ini", g_dir + L"\\LiteSwitcher.ini");
-    HANDLE h = CreateFileW((g_dir + L"\\LiteSwitcher.ini").c_str(), FILE_APPEND_DATA,
+    // Portable: settings live next to FastRevers.exe. If that folder is read-only, fall back to
+    // %APPDATA%\FastRevers.
+    AdoptOldIni(g_dir);
+    HANDLE h = CreateFileW((g_dir + L"\\FastRevers.ini").c_str(), FILE_APPEND_DATA,
                            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_ALWAYS,
                            FILE_ATTRIBUTE_NORMAL, nullptr);
     if (h != INVALID_HANDLE_VALUE) {
@@ -194,14 +213,14 @@ void InitPaths()
         PWSTR app = nullptr;
         if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, nullptr, &app))) {
             std::wstring base(app);
-            AdoptOld(base + L"\\LS", base + L"\\LiteSwitcher");
-            g_dir = base + L"\\LiteSwitcher";
+            for (const OldName &o : kOldNames) AdoptOld(base + L"\\" + o.dir, base + L"\\FastRevers", o.exe);
+            g_dir = base + L"\\FastRevers";
             CreateDirectoryW(g_dir.c_str(), nullptr);
-            AdoptOld(g_dir + L"\\LS.ini", g_dir + L"\\LiteSwitcher.ini");
+            AdoptOldIni(g_dir);
         }
         CoTaskMemFree(app);
     }
-    g_ini = g_dir + L"\\LiteSwitcher.ini";
+    g_ini = g_dir + L"\\FastRevers.ini";
     g_exc = g_dir + L"\\exceptions.txt";
 }
 
@@ -235,9 +254,9 @@ void LoadExceptions()
 void EnsureExceptionsFile()
 {
     if (Exists(g_exc)) return;
-    Append(g_exc, Utf8(T(L"# Исключения LiteSwitcher. Одно слово в строке — оно не будет автоисправляться.\r\n"
+    Append(g_exc, Utf8(T(L"# Исключения FastRevers. Одно слово в строке — оно не будет автоисправляться.\r\n"
                          L"# Строка вида @имя_программы (без .exe) отключает автопереключение в этой программе.\r\n",
-                         L"# LiteSwitcher exceptions. One word per line: it will not be auto-fixed.\r\n"
+                         L"# FastRevers exceptions. One word per line: it will not be auto-fixed.\r\n"
                          L"# A line like @program_name (without .exe) turns auto-switching off in that program.\r\n")));
 }
 
@@ -650,7 +669,7 @@ void ManualConvert()
     if (!next || next == cur) return;
     std::wstring old = Render(g_buf, cur);
     Queue({false, (int)old.size(), Render(g_buf, next), 0, target, next, g_lastAuto});
-    g_lastAuto.clear();  // undoing an auto-fix teaches LiteSwitcher the word (see Action::learn)
+    g_lastAuto.clear();  // undoing an auto-fix teaches FastRevers the word (see Action::learn)
     g_bufLayout = next;
 }
 
@@ -887,8 +906,8 @@ void SetStartup(bool on)
             Call(Op::Disable);
         } else if (!IsOn(Call(Op::Enable))) {  // switched off by the user in Windows settings: only they can undo it
             Balloon(T(L"Автозапуск выключен в Windows", L"Startup is turned off in Windows"),
-                    T(L"Включите LiteSwitcher в «Параметры» → «Приложения» → «Автозагрузка».",
-                      L"Turn LiteSwitcher on in Settings > Apps > Startup."));
+                    T(L"Включите FastRevers в «Параметры» → «Приложения» → «Автозагрузка».",
+                      L"Turn FastRevers on in Settings > Apps > Startup."));
         }
         return;
     }
@@ -901,33 +920,40 @@ void SetStartup(bool on)
     }
 }
 
-// LS 2.0.x started with Windows under the name "LS": move that entry over to LiteSwitcher.exe once.
-// If it was switched off in Settings > Apps > Startup, autostart stays off; a "turned off" mark the user
-// set for LiteSwitcher there is left as it is too.
+// Older versions started with Windows under their own names ("LiteSwitcher", "LS"): move that entry over to
+// FastRevers.exe once. The newest one decides: if it was switched off in Settings > Apps > Startup, autostart
+// stays off; a "turned off" mark the user set for FastRevers there is left as it is too.
 void AdoptOldStartup()
 {
-    wchar_t value[MAX_PATH * 4];
-    DWORD size = sizeof(value);
-    if (RegGetValueW(HKEY_CURRENT_USER, kRunKey, kOldRunName, RRF_RT_REG_SZ, nullptr, value, &size) != ERROR_SUCCESS)
-        return;
-    CharLowerW(value);
-    if (!wcsstr(value, L"\\ls.exe")) return;  // some other program called LS
-    BYTE approved[12];
-    size = sizeof(approved);
-    bool off = RegGetValueW(HKEY_CURRENT_USER, kApprovedKey, kOldRunName, RRF_RT_REG_BINARY, nullptr, approved,
-                            &size) == ERROR_SUCCESS &&
-               size >= 1 && (approved[0] & 1);
-    RegDeleteKeyValueW(HKEY_CURRENT_USER, kRunKey, kOldRunName);
-    RegDeleteKeyValueW(HKEY_CURRENT_USER, kApprovedKey, kOldRunName);
-    if (!off) {
-        std::wstring v = Quoted(g_exe);
-        RegSetKeyValueW(HKEY_CURRENT_USER, kRunKey, kRunName, REG_SZ, v.c_str(), (DWORD)((v.size() + 1) * 2));
-        g_adoptedStartup = true;
+    bool decided = false;
+    for (const OldName &o : kOldNames) {
+        wchar_t value[MAX_PATH * 4];
+        DWORD size = sizeof(value);
+        if (RegGetValueW(HKEY_CURRENT_USER, kRunKey, o.run, RRF_RT_REG_SZ, nullptr, value, &size) != ERROR_SUCCESS)
+            continue;
+        std::wstring exe = std::wstring(L"\\") + o.exe;
+        CharLowerW(value);
+        CharLowerW(exe.data());
+        if (!wcsstr(value, exe.c_str())) continue;  // some other program with that name
+        BYTE approved[12];
+        size = sizeof(approved);
+        bool off = RegGetValueW(HKEY_CURRENT_USER, kApprovedKey, o.run, RRF_RT_REG_BINARY, nullptr, approved,
+                                &size) == ERROR_SUCCESS &&
+                   size >= 1 && (approved[0] & 1);
+        RegDeleteKeyValueW(HKEY_CURRENT_USER, kRunKey, o.run);
+        RegDeleteKeyValueW(HKEY_CURRENT_USER, kApprovedKey, o.run);
+        if (!g_oldExe) g_oldExe = o.exe;
+        if (!decided && !off) {
+            std::wstring v = Quoted(g_exe);
+            RegSetKeyValueW(HKEY_CURRENT_USER, kRunKey, kRunName, REG_SZ, v.c_str(), (DWORD)((v.size() + 1) * 2));
+            g_adoptedStartup = true;
+        }
+        decided = true;
     }
 }
 
-// A running LS.exe (2.0.x, the old name) is closed so that LiteSwitcher.exe takes over without a restart.
-// Returns false when the running copy is LiteSwitcher itself.
+// A running older version (LiteSwitcher.exe or LS.exe) is closed so that FastRevers.exe takes over without a
+// restart. Returns false when the running copy is FastRevers itself.
 bool RetireOldName()
 {
     HWND w = FindWindowW(kWndClass, nullptr);
@@ -937,21 +963,27 @@ bool RetireOldName()
     if (!p) return false;
     wchar_t path[MAX_PATH * 4];
     DWORD n = ARRAYSIZE(path);
-    bool old = false;
+    const wchar_t *oldExe = nullptr;
     if (QueryFullProcessImageNameW(p, 0, path, &n)) {
         const wchar_t *name = wcsrchr(path, L'\\');
-        old = _wcsicmp(name ? name + 1 : path, L"LS.exe") == 0;
+        name = name ? name + 1 : path;
+        for (const OldName &o : kOldNames)
+            if (_wcsicmp(name, o.exe) == 0) oldExe = o.exe;
     }
-    if (old) {
-        PostMessageW(w, WM_CLOSE, 0, 0);  // LS 2.0.x quits on WM_CLOSE: tray icon and hooks are removed
-        old = WaitForSingleObject(p, 5000) == WAIT_OBJECT_0;
+    bool closed = false;
+    if (oldExe) {
+        PostMessageW(w, WM_CLOSE, 0, 0);  // older versions quit on WM_CLOSE: tray icon and hooks are removed
+        closed = WaitForSingleObject(p, 5000) == WAIT_OBJECT_0;
     }
     CloseHandle(p);
-    g_closedOld = old;
-    return old;
+    if (closed) {
+        g_closedOld = true;
+        g_oldExe = oldExe;
+    }
+    return closed;
 }
 
-// The AutoHotkey version (LS.ahk) would fix every word twice. LiteSwitcher does not close it or change its
+// The AutoHotkey version (LS.ahk) would fix every word twice. FastRevers does not close it or change its
 // autostart: it only tells the user what to do.
 BOOL CALLBACK FindScriptVersion(HWND w, LPARAM found)
 {
@@ -989,13 +1021,13 @@ void WarnScriptVersion()
     if (shortcut) {
         if (!text.empty()) text += L"\n\n";
         text += T(L"В автозагрузке остался ярлык LS.lnk старой версии. Удалите его из папки shell:startup "
-                  L"(Win+R → shell:startup), иначе она запустится снова. Чтобы с Windows запускался LiteSwitcher, "
+                  L"(Win+R → shell:startup), иначе она запустится снова. Чтобы с Windows запускался FastRevers, "
                   L"включите в его меню «Запускать вместе с Windows».",
                   L"The old version's LS.lnk shortcut is still in the Startup folder. Delete it from shell:startup "
-                  L"(Win+R → shell:startup), or the old version will start again. To start LiteSwitcher with "
+                  L"(Win+R → shell:startup), or the old version will start again. To start FastRevers with "
                   L"Windows, tick “Start with Windows” in its menu.");
     }
-    MessageBoxW(nullptr, text.c_str(), L"LiteSwitcher", MB_ICONWARNING | MB_SETFOREGROUND);
+    MessageBoxW(nullptr, text.c_str(), L"FastRevers", MB_ICONWARNING | MB_SETFOREGROUND);
 }
 
 // ------------------------------------------------------------------ tray
@@ -1007,7 +1039,7 @@ void TrayAdd()
     g_nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP | NIF_SHOWTIP;
     g_nid.uCallbackMessage = WM_TRAY;
     if (!g_nid.hIcon) LoadIconMetric(g_inst, MAKEINTRESOURCEW(IDI_LS), LIM_SMALL, &g_nid.hIcon);
-    wcscpy_s(g_nid.szTip, L"LiteSwitcher");
+    wcscpy_s(g_nid.szTip, L"FastRevers");
     Shell_NotifyIconW(NIM_ADD, &g_nid);
     g_nid.uVersion = NOTIFYICON_VERSION_4;
     Shell_NotifyIconW(NIM_SETVERSION, &g_nid);
@@ -1127,9 +1159,9 @@ LRESULT CALLBACK WndProc(HWND h, UINT msg, WPARAM wp, LPARAM lp)
         return 0;
 #endif
     case WM_LS_HELLO:
-        Balloon(T(L"LiteSwitcher уже запущен", L"LiteSwitcher is already running"),
-                T(L"Значок LiteSwitcher — в области уведомлений, у часов.",
-                  L"The LiteSwitcher icon is in the notification area."));
+        Balloon(T(L"FastRevers уже запущен", L"FastRevers is already running"),
+                T(L"Значок FastRevers — в области уведомлений, у часов.",
+                  L"The FastRevers icon is in the notification area."));
         return 0;
     case WM_TIMER:
         if (wp == kTimerExceptions) {
@@ -1149,7 +1181,7 @@ LRESULT CALLBACK WndProc(HWND h, UINT msg, WPARAM wp, LPARAM lp)
     return DefWindowProcW(h, msg, wp, lp);
 }
 
-// ------------------------------------------------------------------ self-test: LiteSwitcher.exe --selftest report.txt
+// ------------------------------------------------------------------ self-test: FastRevers.exe --selftest report.txt
 std::vector<Key> KeysFor(const std::wstring &text, HKL hkl)
 {
     std::vector<Key> keys;
@@ -1256,7 +1288,7 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int)
     wc.hIcon = LoadIconW(inst, MAKEINTRESOURCEW(IDI_LS));
     wc.lpszClassName = kWndClass;
     RegisterClassExW(&wc);
-    g_wnd = CreateWindowExW(0, kWndClass, L"LiteSwitcher", WS_OVERLAPPED, 0, 0, 0, 0, nullptr, nullptr, inst, nullptr);
+    g_wnd = CreateWindowExW(0, kWndClass, L"FastRevers", WS_OVERLAPPED, 0, 0, 0, 0, nullptr, nullptr, inst, nullptr);
     g_taskbarCreated = RegisterWindowMessageW(L"TaskbarCreated");
     ChangeWindowMessageFilterEx(g_wnd, g_taskbarCreated, MSGFLT_ALLOW, nullptr);
     ChangeWindowMessageFilterEx(g_wnd, WM_LS_HELLO, MSGFLT_ALLOW, nullptr);
@@ -1270,7 +1302,7 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int)
     g_mouse = SetWindowsHookExW(WH_MOUSE_LL, MouseProc, inst, 0);
     if (!g_kbd) {
         MessageBoxW(nullptr, T(L"Не удалось перехватывать клавиатуру.", L"Could not hook the keyboard."),
-                    L"LiteSwitcher", MB_ICONERROR);
+                    L"FastRevers", MB_ICONERROR);
         return 1;
     }
     SetTimer(g_wnd, kTimerExceptions, 2000, nullptr);
@@ -1278,18 +1310,20 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int)
     HKL en, ru;
     FindLayouts(nullptr, &en, &ru);
     if (!en || !ru) {
-        Balloon(T(L"LiteSwitcher: нужны две раскладки", L"LiteSwitcher needs two layouts"),
+        Balloon(T(L"FastRevers: нужны две раскладки", L"FastRevers needs two layouts"),
                 T(L"Добавьте в Windows раскладки «Русская» и «Английская (США)».",
                   L"Add the Russian and English (US) keyboard layouts in Windows settings."));
     } else if (g_closedOld || g_adoptedFiles || g_adoptedStartup) {
-        std::wstring text;
-        if (g_adoptedFiles) text += T(L"Настройки и исключения LS перенесены. ", L"LS settings and exceptions were moved over. ");
+        std::wstring old = g_oldExe ? g_oldExe : L"LiteSwitcher.exe";
+        std::wstring text = T(L"Раньше программа называлась ", L"The program used to be called ");
+        text += old.substr(0, old.size() - 4) + L". ";
+        if (g_adoptedFiles) text += T(L"Настройки и исключения перенесены. ", L"Settings and exceptions were moved over. ");
         if (g_adoptedStartup) text += T(L"Автозапуск перенесён. ", L"Start with Windows was moved over. ");
-        text += T(L"Файл LS.exe можно удалить.", L"You can delete LS.exe.");
-        Balloon(T(L"LiteSwitcher заменил LS 2.0", L"LiteSwitcher replaced LS 2.0"), text.c_str());
+        text += T(L"Старый файл ", L"You can delete the old file ") + old + T(L" можно удалить.", L".");
+        Balloon(T(L"Теперь это FastRevers", L"This is FastRevers now"), text.c_str());
         WriteOption(L"Welcomed", true);
     } else if (!ReadOption(L"Welcomed", 0)) {
-        Balloon(T(L"LiteSwitcher работает", L"LiteSwitcher is running"),
+        Balloon(T(L"FastRevers работает", L"FastRevers is running"),
                 T(L"Пробел исправляет слово, набранное не в той раскладке; двойной Shift или Pause — вручную. "
                   L"Отменённые исправления запоминаются в exceptions.txt на этом ПК. В сеть ничего не отправляется.",
                   L"Space fixes a word typed in the wrong layout; double Shift or Pause fixes it by hand. "

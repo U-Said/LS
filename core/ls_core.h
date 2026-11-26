@@ -1,6 +1,6 @@
-/* LiteSwitcher — shared core: decides whether a typed word is in the wrong layout.
+/* FastRevers — shared core: decides whether a typed word is in the wrong layout.
  * Used as is by the Windows (Win32) and macOS (Cocoa) apps. Plain C11, no dependencies.
- * Text is UTF-16 (one unit per character): everything LiteSwitcher handles is in the BMP. */
+ * Text is UTF-16 (one unit per character): everything FastRevers handles is in the BMP. */
 #ifndef LS_CORE_H
 #define LS_CORE_H
 
@@ -15,7 +15,7 @@ typedef uint16_t ls_char;
 
 #define LS_VERSION "2.2.0"
 #define LS_DONATE_URL "https://app.lava.top/4179967925"
-#define LS_PRIVACY_URL "https://github.com/U-Said/LiteSwitcher/blob/main/PRIVACY.md"
+#define LS_PRIVACY_URL "https://github.com/U-Said/FastRevers/blob/main/PRIVACY.md"
 
 /* en / ru: what the typed keys give in the English and in the Russian layout;
  * cur_is_en: which of the two is active. Returns 1 when the word should be retyped

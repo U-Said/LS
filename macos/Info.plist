@@ -5,9 +5,9 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>LiteSwitcher</string>
+	<string>FastRevers</string>
 	<key>CFBundleExecutable</key>
-	<string>LiteSwitcher</string>
+	<string>FastRevers</string>
 	<key>CFBundleIconFile</key>
 	<string>LS</string>
 	<key>CFBundleIdentifier</key>
@@ -20,7 +20,7 @@
 		<string>ru</string>
 	</array>
 	<key>CFBundleName</key>
-	<string>LiteSwitcher</string>
+	<string>FastRevers</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

@@ -1,4 +1,4 @@
-# Builds LiteSwitcher for Windows x64, Windows ARM64 and macOS (universal), runs the self-tests and makes the
+# Builds FastRevers for Windows x64, Windows ARM64 and macOS (universal), runs the self-tests and makes the
 # Microsoft Store package. A tag v* also publishes the archives to a GitHub release of this repository.
 name: Build
 
@@ -18,11 +18,11 @@ jobs:
         include:
           - arch: x64
             runner: windows-latest
-            zip: LiteSwitcher-Windows.zip
+            zip: FastRevers-Windows.zip
             machine: '0x8664'
           - arch: ARM64
             runner: windows-11-arm
-            zip: LiteSwitcher-Windows-arm64.zip
+            zip: FastRevers-Windows-arm64.zip
             machine: '0xAA64'
     runs-on: ${{ matrix.runner }}
     steps:
@@ -39,21 +39,21 @@ jobs:
         run: |
           build\Release\coretest.exe > coretest.txt
           if ($LASTEXITCODE) { Get-Content coretest.txt -Encoding UTF8; throw "detector self-test failed" }
-          $p = Start-Process build\Release\LiteSwitcher.exe -ArgumentList '--selftest', 'selftest.txt' -Wait -PassThru
+          $p = Start-Process build\Release\FastRevers.exe -ArgumentList '--selftest', 'selftest.txt' -Wait -PassThru
           Get-Content selftest.txt -Encoding UTF8
-          if ($p.ExitCode -ne 0) { throw "LiteSwitcher.exe self-test: $($p.ExitCode) failed" }
+          if ($p.ExitCode -ne 0) { throw "FastRevers.exe self-test: $($p.ExitCode) failed" }
 
       - name: Check the binary
         shell: pwsh
         run: |
-          $b = [IO.File]::ReadAllBytes('build\Release\LiteSwitcher.exe')
+          $b = [IO.File]::ReadAllBytes('build\Release\FastRevers.exe')
           $machine = [BitConverter]::ToUInt16($b, [BitConverter]::ToInt32($b, 0x3C) + 4)
-          'LiteSwitcher.exe: {0:N0} bytes, machine 0x{1:X4}' -f $b.Length, $machine
+          'FastRevers.exe: {0:N0} bytes, machine 0x{1:X4}' -f $b.Length, $machine
           if ($machine -ne ${{ matrix.machine }}) { throw 'wrong architecture' }
 
       # Code signing by SignPath Foundation (free for open source), only for releases. It stays off until the
       # repository has the variables SIGNPATH_ORGANIZATION_ID, SIGNPATH_PROJECT_SLUG, SIGNPATH_POLICY_SLUG and the
-      # secret SIGNPATH_API_TOKEN. The SignPath artifact configuration: <zip-file> with <pe-file path="LiteSwitcher.exe">.
+      # secret SIGNPATH_API_TOKEN. The SignPath artifact configuration: <zip-file> with <pe-file path="FastRevers.exe">.
       # Every signing request waits for a manual approval in SignPath.
       - name: Upload the unsigned exe for signing
         id: unsigned
@@ -61,7 +61,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-${{ matrix.arch }}
-          path: build/Release/LiteSwitcher.exe
+          path: build/Release/FastRevers.exe
           retention-days: 1
 
       - name: Sign (SignPath)
@@ -80,14 +80,14 @@ jobs:
         if: steps.unsigned.outcome == 'success'
         shell: pwsh
         run: |
-          $sig = Get-AuthenticodeSignature signed\LiteSwitcher.exe
+          $sig = Get-AuthenticodeSignature signed\FastRevers.exe
           "signature: $($sig.Status), $($sig.SignerCertificate.Subject)"
           if ($sig.Status -ne 'Valid') { throw 'the signed exe has no valid signature' }
-          Copy-Item signed\LiteSwitcher.exe build\Release\LiteSwitcher.exe -Force
+          Copy-Item signed\FastRevers.exe build\Release\FastRevers.exe -Force
 
       - name: Package
         shell: pwsh
-        run: Compress-Archive -Path build\Release\LiteSwitcher.exe, LICENSE -DestinationPath ${{ matrix.zip }}
+        run: Compress-Archive -Path build\Release\FastRevers.exe, LICENSE -DestinationPath ${{ matrix.zip }}
 
       - uses: actions/upload-artifact@v4
         with:
@@ -107,29 +107,29 @@ jobs:
       - name: Self-test
         run: |
           build/macos/coretest > /dev/null
-          build/macos/LiteSwitcher.app/Contents/MacOS/LiteSwitcher --selftest
+          build/macos/FastRevers.app/Contents/MacOS/FastRevers --selftest
           if arch -x86_64 /usr/bin/true 2>/dev/null; then
             echo "== Intel slice (Rosetta) =="
-            arch -x86_64 build/macos/LiteSwitcher.app/Contents/MacOS/LiteSwitcher --selftest | tail -n 1
+            arch -x86_64 build/macos/FastRevers.app/Contents/MacOS/FastRevers --selftest | tail -n 1
           else
             echo "Rosetta is not available here: Intel slice not run"
           fi
-          build/macos/LiteSwitcher.app/Contents/MacOS/LiteSwitcher --render-icon menubar-icon.png
+          build/macos/FastRevers.app/Contents/MacOS/FastRevers --render-icon menubar-icon.png
 
       - name: Package
         run: |
           # LICENSE goes next to the app, not into it: the signed bundle must not change
           mkdir -p zip
-          ditto build/macos/LiteSwitcher.app zip/LiteSwitcher.app
+          ditto build/macos/FastRevers.app zip/FastRevers.app
           cp LICENSE zip/
-          ditto -c -k zip LiteSwitcher-macOS.zip
-          codesign --verify --deep --strict zip/LiteSwitcher.app
-          unzip -l LiteSwitcher-macOS.zip | tail -n 3
+          ditto -c -k zip FastRevers-macOS.zip
+          codesign --verify --deep --strict zip/FastRevers.app
+          unzip -l FastRevers-macOS.zip | tail -n 3
 
       - uses: actions/upload-artifact@v4
         with:
-          name: LiteSwitcher-macOS.zip
-          path: LiteSwitcher-macOS.zip
+          name: FastRevers-macOS.zip
+          path: FastRevers-macOS.zip
           retention-days: 30
 
       - uses: actions/upload-artifact@v4
@@ -150,7 +150,7 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          pattern: LiteSwitcher-Windows*.zip
+          pattern: FastRevers-Windows*.zip
           path: zips
           merge-multiple: true
 
@@ -161,18 +161,18 @@ jobs:
           MSIX_PUBLISHER: ${{ vars.MSIX_PUBLISHER }}
           MSIX_PUBLISHER_NAME: ${{ vars.MSIX_PUBLISHER_NAME }}
         run: |
-          Expand-Archive zips\LiteSwitcher-Windows.zip x64
-          Expand-Archive zips\LiteSwitcher-Windows-arm64.zip arm64
+          Expand-Archive zips\FastRevers-Windows.zip x64
+          Expand-Archive zips\FastRevers-Windows-arm64.zip arm64
           $id = @{}
           if ($env:MSIX_IDENTITY_NAME) { $id.IdentityName = $env:MSIX_IDENTITY_NAME }
           if ($env:MSIX_PUBLISHER) { $id.Publisher = $env:MSIX_PUBLISHER }
           if ($env:MSIX_PUBLISHER_NAME) { $id.PublisherDisplayName = $env:MSIX_PUBLISHER_NAME }
-          & .\tools\make_msix.ps1 -Exe x64\LiteSwitcher.exe -ExeArm64 arm64\LiteSwitcher.exe -OutDir msix @id
+          & .\tools\make_msix.ps1 -Exe x64\FastRevers.exe -ExeArm64 arm64\FastRevers.exe -OutDir msix @id
 
       - uses: actions/upload-artifact@v4
         with:
-          name: LiteSwitcher-msixbundle
-          path: msix/LiteSwitcher-*.msixbundle
+          name: FastRevers-msixbundle
+          path: msix/FastRevers-*.msixbundle
           retention-days: 30
 
   release:
@@ -184,20 +184,20 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          pattern: LiteSwitcher-*.zip
+          pattern: FastRevers-*.zip
           merge-multiple: true
       - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
         run: |
-          ls -l LiteSwitcher-*.zip
-          sha256sum LiteSwitcher-*.zip > SHA256SUMS.txt
+          ls -l FastRevers-*.zip
+          sha256sum FastRevers-*.zip > SHA256SUMS.txt
           cat SHA256SUMS.txt
           {
-            echo "LiteSwitcher ${TAG#v}"
+            echo "FastRevers ${TAG#v}"
             echo
-            echo "Official builds are published only at https://github.com/U-Said/LiteSwitcher/releases."
+            echo "Official builds are published only at https://github.com/U-Said/FastRevers/releases."
             echo
             echo "SHA-256:"
             echo '```'
@@ -205,5 +205,5 @@ jobs:
             echo '```'
           } > notes.md
           gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
-            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "LiteSwitcher ${TAG#v}" --notes-file notes.md --latest
-          gh release upload "$TAG" LiteSwitcher-*.zip SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --clobber
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "FastRevers ${TAG#v}" --notes-file notes.md --latest
+          gh release upload "$TAG" FastRevers-*.zip SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --clobber

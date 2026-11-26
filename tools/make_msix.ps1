@@ -1,16 +1,16 @@
-# Builds the Microsoft Store package of LiteSwitcher from ready LiteSwitcher.exe files:
-#   LiteSwitcher-<version>-x64.msix, LiteSwitcher-<version>-arm64.msix and, with both, LiteSwitcher-<version>.msixbundle
+# Builds the Microsoft Store package of FastRevers from ready FastRevers.exe files:
+#   FastRevers-<version>-x64.msix, FastRevers-<version>-arm64.msix and, with both, FastRevers-<version>.msixbundle
 # (the bundle is what goes to Partner Center; the Store signs it). Next to them stay the unpacked layouts,
 # which `Add-AppxPackage -Register <layout>\AppxManifest.xml` installs for a test (needs Developer Mode).
-#   powershell -File tools/make_msix.ps1 -Exe build\LiteSwitcher.exe -ExeArm64 arm64\LiteSwitcher.exe `
+#   powershell -File tools/make_msix.ps1 -Exe build\FastRevers.exe -ExeArm64 arm64\FastRevers.exe `
 #     -IdentityName <Package/Identity/Name> -Publisher <Package/Identity/Publisher> -PublisherDisplayName <name>
 # The three identity values are on Partner Center > the app > Product identity; without them a test identity is used.
 param(
     [string]$Exe,
     [string]$ExeArm64,
     [string]$OutDir = 'build\msix',
-    [string]$IdentityName = 'LiteSwitcher.Test',
-    [string]$Publisher = 'CN=LiteSwitcher Test',
+    [string]$IdentityName = 'FastRevers.Test',
+    [string]$Publisher = 'CN=FastRevers Test',
     [string]$PublisherDisplayName = 'U-Said'
 )
 $ErrorActionPreference = 'Stop'
@@ -32,7 +32,7 @@ function Invoke-Tool([string]$tool, [string[]]$arguments) {
 }
 
 $cmake = Get-Content "$root\CMakeLists.txt" -Raw
-if ($cmake -notmatch 'project\(LiteSwitcher VERSION (\d+\.\d+\.\d+)') { throw 'version not found in CMakeLists.txt' }
+if ($cmake -notmatch 'project\(FastRevers VERSION (\d+\.\d+\.\d+)') { throw 'version not found in CMakeLists.txt' }
 $version = "$($Matches[1]).0"   # the Store wants the fourth number to be 0
 if (-not [IO.Path]::IsPathRooted($OutDir)) { $OutDir = Join-Path (Get-Location) $OutDir }
 $OutDir = [IO.Path]::GetFullPath($OutDir)
@@ -90,7 +90,7 @@ foreach ($p in @(@{ arch = 'x64'; exe = $Exe; machine = 0x8664 }, @{ arch = 'arm
     $layout = Join-Path $OutDir "layout-$($p.arch)"
     Remove-Item -Recurse -Force $layout -ErrorAction SilentlyContinue
     New-Item -ItemType Directory $layout | Out-Null
-    Copy-Item $exePath "$layout\LiteSwitcher.exe"
+    Copy-Item $exePath "$layout\FastRevers.exe"
     Copy-Item $assets "$layout\Assets" -Recurse
     $manifest = $template.Replace('{{IdentityName}}', (& $esc $IdentityName)).Replace('{{Publisher}}', (& $esc $Publisher)).
         Replace('{{PublisherDisplayName}}', (& $esc $PublisherDisplayName)).Replace('{{Version}}', $version).Replace('{{Arch}}', $p.arch)
@@ -103,13 +103,13 @@ foreach ($p in @(@{ arch = 'x64'; exe = $Exe; machine = 0x8664 }, @{ arch = 'arm
     $cfg.Save($priConfig)
     Invoke-Tool $makepri @('new', '/pr', $layout, '/cf', $priConfig, '/mn', "$layout\AppxManifest.xml", '/of', "$layout\resources.pri", '/o')
     Remove-Item $priConfig
-    $msix = Join-Path $packages "LiteSwitcher-$($version -replace '\.0$')-$($p.arch).msix"
+    $msix = Join-Path $packages "FastRevers-$($version -replace '\.0$')-$($p.arch).msix"
     Invoke-Tool $makeappx @('pack', '/d', $layout, '/p', $msix, '/o')
     $built += $msix
     Write-Host "$msix $((Get-Item $msix).Length) bytes"
 }
 if ($built.Count -eq 2) {
-    $bundle = Join-Path $OutDir "LiteSwitcher-$($version -replace '\.0$').msixbundle"
+    $bundle = Join-Path $OutDir "FastRevers-$($version -replace '\.0$').msixbundle"
     Invoke-Tool $makeappx @('bundle', '/d', $packages, '/p', $bundle, '/bv', $version, '/o')
     Write-Host "$bundle $((Get-Item $bundle).Length) bytes"
 }

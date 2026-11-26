@@ -1,5 +1,5 @@
-// LiteSwitcher for macOS: fixes text typed in the wrong RU/EN keyboard layout.
-// A menu bar app (LiteSwitcher.app), no Hammerspoon or anything else needed.
+// FastRevers for macOS: fixes text typed in the wrong RU/EN keyboard layout.
+// A menu bar app (FastRevers.app), no Hammerspoon or anything else needed.
 //   Space / Return  - a word typed in the wrong layout is fixed automatically
 //   Double Shift    - fix the last word (again - revert); with no fresh word, fix the selected text
 #import <Cocoa/Cocoa.h>
@@ -213,9 +213,9 @@ static void EnsureExceptionsFile(void)
     // words learned by the Hammerspoon version
     NSString *legacy = [NSHomeDirectory() stringByAppendingPathComponent:@".hammerspoon/LS_exceptions.txt"];
     if ([fm fileExistsAtPath:legacy] && [fm copyItemAtPath:legacy toPath:g_excPath error:nil]) return;
-    NSString *head = L(@"# Исключения LiteSwitcher. Одно слово в строке — оно не будет автоисправляться.\n"
+    NSString *head = L(@"# Исключения FastRevers. Одно слово в строке — оно не будет автоисправляться.\n"
                        @"# Строка вида @Имя программы отключает автопереключение в этой программе.\n",
-                       @"# LiteSwitcher exceptions. One word per line: it will not be auto-fixed.\n"
+                       @"# FastRevers exceptions. One word per line: it will not be auto-fixed.\n"
                        @"# A line like @App Name turns auto-switching off in that app.\n");
     [head writeToFile:g_excPath atomically:YES encoding:NSUTF8StringEncoding error:nil];
 }
@@ -379,7 +379,7 @@ static void ManualConvert(void)
     id from = lang == LangEn ? en : ru, next = lang == LangEn ? ru : en;
     NSString *old = Render(g_buf, g_len, from), *neu = Render(g_buf, g_len, next);
     if (!old || !neu) return;
-    if (g_lastAuto) AddException(g_lastAuto);  // undoing an auto-fix teaches LiteSwitcher the word
+    if (g_lastAuto) AddException(g_lastAuto);  // undoing an auto-fix teaches FastRevers the word
     g_lastAuto = nil;
     PostDeletes(old.length);
     PostText(neu);
@@ -582,8 +582,8 @@ static void ShowAlert(NSString *title, NSString *text)
 
 static NSString *MoveToApplicationsText(void)
 {
-    return L(@"macOS запустила LiteSwitcher из временной копии. Перетащите LiteSwitcher.app в папку «Программы» и откройте его оттуда.",
-             @"macOS started LiteSwitcher from a temporary copy. Drag LiteSwitcher.app to the Applications folder and open it from there.");
+    return L(@"macOS запустила FastRevers из временной копии. Перетащите FastRevers.app в папку «Программы» и откройте его оттуда.",
+             @"macOS started FastRevers from a temporary copy. Drag FastRevers.app to the Applications folder and open it from there.");
 }
 
 static void SetLogin(BOOL on)
@@ -594,7 +594,7 @@ static void SetLogin(BOOL on)
         return;
     }
     if (Translocated()) {
-        ShowAlert(L(@"Сначала перенесите LiteSwitcher в «Программы»", @"Move LiteSwitcher to Applications first"), MoveToApplicationsText());
+        ShowAlert(L(@"Сначала перенесите FastRevers в «Программы»", @"Move FastRevers to Applications first"), MoveToApplicationsText());
         return;
     }
     [NSFileManager.defaultManager createDirectoryAtPath:path.stringByDeletingLastPathComponent
@@ -610,12 +610,19 @@ static void SetLogin(BOOL on)
     [agent writeToFile:path atomically:YES];
 }
 
-// LS 2.0.x (the old name) registered the login item as .../LS.app/Contents/MacOS/LS: point it at this app.
+// Older names of the app: 2.1.x was LiteSwitcher.app, 2.0.x was LS.app (same bundle id, so settings carry over).
+static BOOL IsOldApp(NSString *bundleName)
+{
+    return [bundleName isEqualToString:@"LiteSwitcher.app"] || [bundleName isEqualToString:@"LS.app"];
+}
+
+// An older version registered the login item with its own path: point it at this app.
 static void AdoptOldLogin(void)
 {
     NSDictionary *d = [NSDictionary dictionaryWithContentsOfFile:AgentPath()];
     NSString *old = [d[@"ProgramArguments"] firstObject];
-    if ([old isKindOfClass:NSString.class] && [old hasSuffix:@"/LS.app/Contents/MacOS/LS"] && !Translocated())
+    if ([old isKindOfClass:NSString.class] && !Translocated() &&
+        ([old hasSuffix:@"/LiteSwitcher.app/Contents/MacOS/LiteSwitcher"] || [old hasSuffix:@"/LS.app/Contents/MacOS/LS"]))
         SetLogin(YES);
 }
 
@@ -635,24 +642,26 @@ static void AdoptOldLogin(void)
     pid_t me = NSProcessInfo.processInfo.processIdentifier;
     for (NSRunningApplication *other in [NSRunningApplication runningApplicationsWithBundleIdentifier:bundleID ?: @""]) {
         if (other.processIdentifier == me) continue;
-        if (![other.bundleURL.lastPathComponent isEqualToString:@"LS.app"]) {
+        if (!IsOldApp(other.bundleURL.lastPathComponent)) {
             [NSApp terminate:nil];  // already running
             return;
         }
-        [other terminate];  // LS 2.0.x, the old name: this copy takes over
+        [other terminate];  // an older version (LiteSwitcher, LS): this copy takes over
         for (int i = 0; i < 50 && !other.terminated; i++)
             [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
     }
-    NSUserDefaults *ud = NSUserDefaults.standardUserDefaults;  // same bundle id as LS 2.0.x: settings carry over
+    NSUserDefaults *ud = NSUserDefaults.standardUserDefaults;  // same bundle id as the older versions: settings carry over
     [ud registerDefaults:@{@"auto" : @YES, @"doubleShift" : @YES}];
     g_optAuto = [ud boolForKey:@"auto"];
     g_optShift = [ud boolForKey:@"doubleShift"];
 
     NSFileManager *fm = NSFileManager.defaultManager;
     NSString *support = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES).firstObject;
-    NSString *dir = [support stringByAppendingPathComponent:@"LiteSwitcher"];
-    NSString *oldDir = [support stringByAppendingPathComponent:@"LS"];  // LS 2.0.x
-    if (![fm fileExistsAtPath:dir] && [fm fileExistsAtPath:oldDir]) [fm moveItemAtPath:oldDir toPath:dir error:nil];
+    NSString *dir = [support stringByAppendingPathComponent:@"FastRevers"];
+    for (NSString *oldName in @[ @"LiteSwitcher", @"LS" ]) {  // exceptions of the older versions, newest first
+        NSString *oldDir = [support stringByAppendingPathComponent:oldName];
+        if (![fm fileExistsAtPath:dir] && [fm fileExistsAtPath:oldDir]) [fm moveItemAtPath:oldDir toPath:dir error:nil];
+    }
     g_excPath = [dir stringByAppendingPathComponent:@"exceptions.txt"];
     EnsureExceptionsFile();
     LoadExceptions();
@@ -696,16 +705,16 @@ static void AdoptOldLogin(void)
                                                   }];
 
     if (Translocated())
-        ShowAlert(L(@"Перенесите LiteSwitcher в «Программы»", @"Move LiteSwitcher to Applications"), MoveToApplicationsText());
+        ShowAlert(L(@"Перенесите FastRevers в «Программы»", @"Move FastRevers to Applications"), MoveToApplicationsText());
     [self warnAboutHammerspoon];
     id en, ru;
     FindLayouts(CurrentSource(), &en, &ru);
     if (!en || !ru)
-        ShowAlert(L(@"LiteSwitcher: нужны две раскладки", @"LiteSwitcher needs two input sources"),
+        ShowAlert(L(@"FastRevers: нужны две раскладки", @"FastRevers needs two input sources"),
                   L(@"Добавьте в «Системные настройки → Клавиатура → Источники ввода» раскладки ABC (или США) и «Русская».",
                     @"Add ABC (or U.S.) and Russian in System Settings → Keyboard → Input Sources."));
     if (!Trusted(NO) && ![ud boolForKey:@"accessExplained"]) {  // once, before macOS asks for the access
-        ShowAlert(L(@"Зачем LiteSwitcher «Универсальный доступ»", @"Why LiteSwitcher needs Accessibility access"),
+        ShowAlert(L(@"Зачем FastRevers «Универсальный доступ»", @"Why FastRevers needs Accessibility access"),
                   L(@"Доступ нужен, чтобы видеть нажатия текущего слова и перепечатывать его. Нажатия не сохраняются "
                     @"и никуда не отправляются; на диск записываются только слова, исправление которых вы отменили.",
                     @"Access is needed to see the keys of the current word and retype it. Keystrokes are not saved or "
@@ -722,7 +731,7 @@ static void AdoptOldLogin(void)
                                                encoding:NSUTF8StringEncoding
                                                   error:nil];
     if (![init containsString:@"require(\"LS\")"] && ![init containsString:@"require('LS')"]) return;
-    ShowAlert(L(@"Старая версия LiteSwitcher работает в Hammerspoon", @"The old LiteSwitcher is running in Hammerspoon"),
+    ShowAlert(L(@"Старая версия LS работает в Hammerspoon", @"The old LS is running in Hammerspoon"),
               L(@"Иначе каждое слово будет исправляться дважды. Удалите строку require(\"LS\") из ~/.hammerspoon/init.lua "
                 @"и выберите в Hammerspoon «Reload Config».",
                 @"Otherwise every word is fixed twice. Remove the require(\"LS\") line from ~/.hammerspoon/init.lua "
@@ -750,8 +759,8 @@ static void AdoptOldLogin(void)
 - (void)updateStatus
 {
     _item.button.appearsDisabled = g_tap == NULL;
-    _item.button.toolTip = g_tap ? @"LiteSwitcher"
-                                 : L(@"LiteSwitcher ждёт доступа в «Универсальном доступе»", @"LiteSwitcher needs Accessibility access");
+    _item.button.toolTip = g_tap ? @"FastRevers"
+                                 : L(@"FastRevers ждёт доступа в «Универсальном доступе»", @"FastRevers needs Accessibility access");
 }
 
 - (BOOL)applicationShouldHandleReopen:(NSApplication *)app hasVisibleWindows:(BOOL)flag
@@ -786,9 +795,9 @@ static void AdoptOldLogin(void)
     [m addItem:NSMenuItem.separatorItem];
     [self add:m title:L(@"Конфиденциальность…", @"Privacy…") action:@selector(openPrivacy:) on:NO];
     [self add:m title:L(@"Поддержать проект (lava.top)…", @"Support the project (lava.top)…") action:@selector(openDonate:) on:NO];
-    NSMenuItem *about =[m addItemWithTitle:[NSString stringWithFormat:@"LiteSwitcher %s", LS_VERSION] action:nil keyEquivalent:@""];
+    NSMenuItem *about =[m addItemWithTitle:[NSString stringWithFormat:@"FastRevers %s", LS_VERSION] action:nil keyEquivalent:@""];
     about.enabled = NO;
-    NSMenuItem *quit = [m addItemWithTitle:L(@"Выйти из LiteSwitcher", @"Quit LiteSwitcher") action:@selector(terminate:) keyEquivalent:@"q"];
+    NSMenuItem *quit = [m addItemWithTitle:L(@"Выйти из FastRevers", @"Quit FastRevers") action:@selector(terminate:) keyEquivalent:@"q"];
     quit.target = NSApp;
 }
 
@@ -847,7 +856,7 @@ static void AdoptOldLogin(void)
 
 @end
 
-// ------------------------------------------------------------------ checks run in CI: LiteSwitcher --selftest, LiteSwitcher --render-icon out.png
+// ------------------------------------------------------------------ checks run in CI: FastRevers --selftest, FastRevers --render-icon out.png
 static id InstalledSource(NSString *sid)
 {
     NSDictionary *f = @{(__bridge NSString *)kTISPropertyInputSourceID : sid};
