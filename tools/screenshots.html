@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- Source of the English catalog screenshots (1280x800), drawn from the real UI texts:
+       ?menu -> docs/screenshot-menu-en.png   Windows tray menu, items as in windows/main.cpp
+       ?fix  -> docs/screenshot-fix-en.png    before/after examples, exactly what the detector does
+       ?mac  -> docs/screenshot-macos-en.png  macOS menu bar menu, items as in macos/main.m
+     Render: tools/make_billboard.ps1 -->
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1280px; height: 800px; overflow: hidden; }
+  body { font-family: "Segoe UI Variable Text", "Segoe UI", sans-serif; position: relative; }
+  .scene { display: none; position: absolute; inset: 0; }
+  .mono { font-family: "Cascadia Mono", Consolas, monospace; }
+
+  /* caption card shared by the desktop scenes */
+  .card { position: absolute; display: flex; align-items: center; gap: 18px; padding: 18px 30px 18px 14px;
+          border-radius: 18px; background: rgba(16, 20, 28, 0.62); border: 1px solid rgba(255, 255, 255, 0.10);
+          box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35); color: #eef1f5; }
+  .card img { width: 104px; height: 104px; margin: -22px -10px; }
+  .card b { display: block; font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif; font-size: 36px; font-weight: 600; letter-spacing: -0.3px; }
+  .card span { display: block; font-size: 19px; color: #aab3bf; margin-top: 2px; }
+
+  /* ---------------- Windows: tray menu ---------------- */
+  #menu { background:
+            radial-gradient(520px 420px at 72% 38%, rgba(120, 180, 255, 0.55), transparent 70%),
+            radial-gradient(700px 520px at 30% 75%, rgba(40, 110, 200, 0.55), transparent 70%),
+            radial-gradient(900px 700px at 90% 100%, rgba(20, 60, 140, 0.8), transparent 70%),
+            linear-gradient(160deg, #0d1d3a 0%, #12305e 45%, #0a1830 100%); }
+  #menu .card { left: 56px; top: 56px; }
+  .taskbar { position: absolute; left: 0; right: 0; bottom: 0; height: 72px; background: rgba(30, 30, 32, 0.94);
+             border-top: 1px solid rgba(255, 255, 255, 0.08); color: #f0f0f0; }
+  .search { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); width: 300px; height: 44px; border-radius: 22px;
+            background: #3a3a3c; display: flex; align-items: center; gap: 12px; padding: 0 18px; color: #b9b9bd; font-size: 18px; }
+  .tray { position: absolute; right: 14px; top: 0; height: 72px; display: flex; align-items: center; gap: 4px; }
+  .tray .btn { height: 56px; min-width: 48px; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 0 10px; }
+  .tray .btn.active { background: rgba(255, 255, 255, 0.10); }
+  .tray .lang { font-size: 18px; letter-spacing: 0.3px; }
+  .tray .sys { gap: 14px; }
+  .tray .clock { flex-direction: column; align-items: flex-end; font-size: 17px; line-height: 1.3; padding: 0 12px; }
+  .tray img { width: 36px; height: 36px; }
+  .wmenu { position: absolute; z-index: 2; right: 339px; bottom: 84px; width: 392px; background: #2b2b2b; border: 1px solid #454545;
+           border-radius: 12px; padding: 8px 6px; box-shadow: 0 22px 60px rgba(0, 0, 0, 0.55); color: #f2f2f2; }
+  .wmenu .it { height: 46px; border-radius: 6px; display: flex; align-items: center; padding-left: 52px; font-size: 19px; position: relative; }
+  .wmenu .it.hover { background: #3a3a3a; }
+  .wmenu .it.on::before { content: ""; position: absolute; left: 20px; top: 15px; width: 7px; height: 13px;
+                          border: solid #f2f2f2; border-width: 0 2.5px 2.5px 0; transform: rotate(40deg); }
+  .wmenu .sep { height: 1px; background: #4a4a4a; margin: 6px 10px; }
+  .cursor { position: absolute; z-index: 3; left: 724px; top: 524px; width: 26px; }
+
+  /* ---------------- before / after ---------------- */
+  #fix { color: #e8eaee; background: radial-gradient(1200px 760px at 12% 0%, #232a36 0%, #151920 55%, #101318 100%); padding: 40px 64px 0; }
+  #fix header { display: flex; align-items: center; gap: 20px; }
+  #fix header img { width: 132px; height: 132px; margin: -30px -6px -30px -10px; }
+  #fix h1 { font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif; font-size: 40px; font-weight: 600; letter-spacing: -0.3px; }
+  #fix .sub { font-size: 20px; color: #9aa3af; margin-top: 2px; }
+  .rows { margin-top: 34px; display: grid; grid-template-columns: 230px 400px 52px 400px; column-gap: 12px; row-gap: 26px; align-items: center; }
+  .label .keys { display: flex; gap: 8px; margin-bottom: 10px; }
+  .kbd { font-size: 17px; font-weight: 600; color: #e9edf2; padding: 5px 12px; border-radius: 8px; background: #252b35;
+         border: 1px solid #3a4250; border-bottom-width: 3px; }
+  .label p { font-size: 17px; line-height: 1.35; color: #9aa3af; }
+  .arrow { text-align: center; color: #6fc3ef; font-size: 30px; }
+  .win { height: 160px; border-radius: 12px; background: #1f1f1f; border: 1px solid #383838; overflow: hidden;
+         box-shadow: 0 14px 36px rgba(0, 0, 0, 0.4); display: flex; flex-direction: column; }
+  .win.after { border-color: #4f8fb3; }
+  .tb { height: 38px; display: flex; align-items: center; justify-content: space-between; padding-left: 16px; background: #2a2a2a;
+        font-size: 15px; color: #cfcfcf; }
+  .tb i { font-style: normal; display: flex; }
+  .tb i b { width: 44px; text-align: center; font-weight: 400; color: #bdbdbd; font-size: 15px; }
+  .ed { flex: 1; padding: 18px 20px 0; font-size: 27px; color: #f3f3f3; white-space: pre; }
+  .ed .caret { display: inline-block; width: 2px; height: 31px; background: #f3f3f3; vertical-align: -5px; }
+  .ed .sel { background: #2d5a8a; }
+  .sb { height: 34px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px 0 20px; background: #262626;
+        font-size: 14px; color: #9a9a9a; }
+  .chip { font-size: 14px; font-weight: 600; padding: 2px 10px; border-radius: 6px; background: #343434; color: #cfcfcf; }
+  .after .chip { background: #1f4d6b; color: #e6f4fd; }
+  #fix .hint { position: absolute; left: 64px; right: 64px; bottom: 40px; font-size: 18px; line-height: 1.6; color: #8e97a4; }
+  #fix .hint .kbd { font-size: 15px; padding: 2px 9px; margin: 0 2px; }
+
+  /* ---------------- macOS: menu bar ---------------- */
+  #mac { background:
+           radial-gradient(640px 480px at 22% 30%, rgba(255, 150, 120, 0.75), transparent 70%),
+           radial-gradient(700px 560px at 80% 70%, rgba(120, 90, 220, 0.85), transparent 70%),
+           radial-gradient(800px 600px at 50% 110%, rgba(60, 40, 150, 0.9), transparent 70%),
+           linear-gradient(135deg, #e7a38f 0%, #9d6fd0 45%, #3a2d8a 100%);
+         font-family: "Segoe UI Variable Text", "Segoe UI", sans-serif; }
+  #mac .card { left: 56px; bottom: 56px; }
+  .mbar { position: absolute; left: 0; right: 0; top: 0; height: 36px; background: rgba(246, 244, 250, 0.78);
+          display: flex; align-items: center; justify-content: space-between; padding: 0 18px 0 22px; color: #1d1d1f; font-size: 19px; }
+  .mbar .left { display: flex; gap: 30px; } .mbar .left b { font-weight: 700; }
+  .mbar .right { display: flex; align-items: center; gap: 22px; }
+  .ls { width: 46px; height: 30px; border-radius: 7px; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.13); }
+  .mmenu { position: absolute; top: 42px; left: 714px; width: 352px; background: rgba(238, 236, 242, 0.95); border: 1px solid rgba(0, 0, 0, 0.14);
+           border-radius: 13px; padding: 7px; box-shadow: 0 18px 50px rgba(30, 10, 60, 0.35); color: #1d1d1f; font-size: 19.5px; }
+  .mmenu .it { height: 34px; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px 0 34px; position: relative; }
+  .mmenu .it.on::before { content: "✓"; position: absolute; left: 11px; font-size: 18px; font-weight: 600; }
+  .mmenu .it.hover { background: #2f6fde; color: #fff; }
+  .mmenu .it.off { color: #9b9aa0; }
+  .mmenu .it kbd { font-family: inherit; color: #77767c; }
+  .mmenu .sep { height: 1px; background: rgba(0, 0, 0, 0.12); margin: 6px 12px; }
+</style>
+</head>
+<body>
+
+<!-- Windows: the tray menu of LiteSwitcher -->
+<div class="scene" id="menu">
+  <div class="card"><img src="../art/ls-256.png" alt=""><div><b>LiteSwitcher for Windows</b><span>Lives in the tray · Windows 10 and 11, x64 and ARM64</span></div></div>
+  <div class="wmenu">
+    <div class="it on">Auto-switching</div>
+    <div class="it on">Double Shift to fix</div>
+    <div class="it on">Start with Windows</div>
+    <div class="it hover">Exceptions…</div>
+    <div class="it">Reload exceptions</div>
+    <div class="sep"></div>
+    <div class="it">Support the project…</div>
+    <div class="it">Exit</div>
+  </div>
+  <div class="taskbar">
+    <div class="search">
+      <svg width="20" height="20" viewBox="0 0 20 20"><circle cx="8.5" cy="8.5" r="6" fill="none" stroke="#c9c9cd" stroke-width="2"/><path d="M13 13l5 5" stroke="#c9c9cd" stroke-width="2" stroke-linecap="round"/></svg>
+      Search
+    </div>
+    <div class="tray">
+      <div class="btn"><svg width="18" height="12" viewBox="0 0 18 12"><path d="M2 10l7-7 7 7" fill="none" stroke="#eee" stroke-width="2"/></svg></div>
+      <div class="btn active"><img src="../art/ls-32.png" alt=""></div>
+      <div class="btn lang">ENG</div>
+      <div class="btn sys">
+        <svg width="24" height="20" viewBox="0 0 24 20"><path d="M2 7a15 15 0 0 1 20 0M5.5 10.5a10 10 0 0 1 13 0M9 14a5 5 0 0 1 6 0" fill="none" stroke="#f0f0f0" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1.6" fill="#f0f0f0"/></svg>
+        <svg width="24" height="20" viewBox="0 0 24 20"><path d="M3 7h4l5-4v14l-5-4H3z" fill="#f0f0f0"/><path d="M16 6a5 5 0 0 1 0 8M19 3a9 9 0 0 1 0 14" fill="none" stroke="#f0f0f0" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg width="30" height="16" viewBox="0 0 30 16"><rect x="1" y="1" width="25" height="14" rx="3" fill="none" stroke="#f0f0f0" stroke-width="2"/><rect x="4" y="4" width="16" height="8" rx="1" fill="#f0f0f0"/><rect x="27" y="5" width="2.5" height="6" rx="1" fill="#f0f0f0"/></svg>
+      </div>
+      <div class="btn clock"><span>10:24 AM</span><span>11/26/2026</span></div>
+    </div>
+  </div>
+  <svg class="cursor" viewBox="0 0 26 38"><path d="M2 2v30l8-8 5 12 5-2-5-12h11z" fill="#fff" stroke="#000" stroke-width="2" stroke-linejoin="round"/></svg>
+</div>
+
+<!-- Before / after: what happens as you type -->
+<div class="scene" id="fix">
+  <header>
+    <img src="../art/ls-256.png" alt="">
+    <div><h1>Typed in the wrong layout? Keep typing.</h1><div class="sub">LiteSwitcher retypes the word and switches the keyboard layout for you.</div></div>
+  </header>
+  <div class="rows">
+    <div class="label"><div class="keys"><span class="kbd">Space</span></div><p>fixes the word you just typed and switches the layout</p></div>
+    <div class="win"><div class="tb">Before<i><b>—</b><b>▢</b><b>✕</b></i></div><div class="ed mono">ghbdtn<span class="caret"></span></div><div class="sb">Ln 1, Col 7<span class="chip">EN</span></div></div>
+    <div class="arrow">→</div>
+    <div class="win after"><div class="tb">After<i><b>—</b><b>▢</b><b>✕</b></i></div><div class="ed mono">привет <span class="caret"></span></div><div class="sb">Ln 1, Col 8<span class="chip">RU</span></div></div>
+
+    <div class="label"><div class="keys"><span class="kbd">Shift</span><span class="kbd">Pause</span></div><p>fixes the selected text, the clipboard stays as it was</p></div>
+    <div class="win"><div class="tb">Before<i><b>—</b><b>▢</b><b>✕</b></i></div><div class="ed mono"><span class="sel">Ghbdtn? rfr ltkf&amp;</span></div><div class="sb">17 characters selected<span class="chip">EN</span></div></div>
+    <div class="arrow">→</div>
+    <div class="win after"><div class="tb">After<i><b>—</b><b>▢</b><b>✕</b></i></div><div class="ed mono">Привет, как дела?<span class="caret"></span></div><div class="sb">Ln 1, Col 18<span class="chip">RU</span></div></div>
+
+    <div class="label"><div class="keys"><span class="kbd">Space</span></div><p>works the other way too: Russian layout, English word</p></div>
+    <div class="win"><div class="tb">Before<i><b>—</b><b>▢</b><b>✕</b></i></div><div class="ed mono">руддщ<span class="caret"></span></div><div class="sb">Ln 1, Col 6<span class="chip">RU</span></div></div>
+    <div class="arrow">→</div>
+    <div class="win after"><div class="tb">After<i><b>—</b><b>▢</b><b>✕</b></i></div><div class="ed mono">hello <span class="caret"></span></div><div class="sb">Ln 1, Col 7<span class="chip">EN</span></div></div>
+  </div>
+  <div class="hint">Missed one? <span class="kbd">Pause</span> or double <span class="kbd">Shift</span> fixes the last word by hand.
+    Undo a wrong fix the same way, and LiteSwitcher learns the word.</div>
+</div>
+
+<!-- macOS: the menu bar menu of LiteSwitcher -->
+<div class="scene" id="mac">
+  <div class="mbar">
+    <div class="left"><b>Finder</b><span>File</span><span>Edit</span><span>View</span><span>Go</span><span>Window</span><span>Help</span></div>
+    <div class="right">
+      <!-- the menu bar image of macos/main.m (StatusImage): a rounded box with "LS" cut out -->
+      <div class="ls"><svg width="33" height="24" viewBox="0 0 22 16"><defs><mask id="cut"><rect width="22" height="16" fill="#fff"/><text x="11" y="11.6" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="700" font-size="10" fill="#000">LS</text></mask></defs><rect x="1.5" y="1" width="19" height="14" rx="3.5" fill="#1d1d1f" mask="url(#cut)"/></svg></div>
+      <svg width="26" height="20" viewBox="0 0 24 20"><path d="M2 7a15 15 0 0 1 20 0M5.5 10.5a10 10 0 0 1 13 0M9 14a5 5 0 0 1 6 0" fill="none" stroke="#1d1d1f" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1.7" fill="#1d1d1f"/></svg>
+      <svg width="36" height="18" viewBox="0 0 30 16"><rect x="1" y="1" width="25" height="14" rx="4" fill="none" stroke="#1d1d1f" stroke-width="1.6"/><rect x="3.5" y="3.5" width="17" height="9" rx="2" fill="#1d1d1f"/><rect x="27" y="5.5" width="2" height="5" rx="1" fill="#1d1d1f"/></svg>
+      <svg width="24" height="20" viewBox="0 0 24 20"><rect x="2" y="2" width="20" height="7" rx="3.5" fill="none" stroke="#1d1d1f" stroke-width="1.8"/><circle cx="17.5" cy="5.5" r="2" fill="#1d1d1f"/><rect x="2" y="11" width="20" height="7" rx="3.5" fill="none" stroke="#1d1d1f" stroke-width="1.8"/><circle cx="6.5" cy="14.5" r="2" fill="#1d1d1f"/></svg>
+      <span>Thu Nov 26&nbsp;&nbsp;10:24 AM</span>
+    </div>
+  </div>
+  <div class="mmenu">
+    <div class="it on">Auto-switching</div>
+    <div class="it on">Double Shift to fix</div>
+    <div class="it on">Open at login</div>
+    <div class="it hover">Exceptions…</div>
+    <div class="it">Reload exceptions</div>
+    <div class="sep"></div>
+    <div class="it">Support the project…</div>
+    <div class="it off">LiteSwitcher 2.1.0</div>
+    <div class="it">Quit LiteSwitcher<kbd>⌘Q</kbd></div>
+  </div>
+  <div class="card"><img src="../art/ls-256.png" alt=""><div><b>LiteSwitcher for macOS</b><span>Lives in the menu bar · Apple Silicon and Intel</span></div></div>
+</div>
+
+<script>
+const id = ["menu", "fix", "mac"].find(s => location.search.includes(s)) || "menu";
+document.getElementById(id).style.display = "block";
+</script>
+</body>
+</html>
