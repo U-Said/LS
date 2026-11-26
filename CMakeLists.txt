@@ -2,7 +2,7 @@
 #   cmake -S . -B build -A x64      (or -A ARM64)
 #   cmake --build build --config Release
 cmake_minimum_required(VERSION 3.21)
-project(FastRevers VERSION 2.2.0 LANGUAGES C CXX)
+project(FastRevers VERSION 2.2.1 LANGUAGES C CXX)
 
 if(NOT WIN32)
   message(FATAL_ERROR "This CMake project builds the Windows app; on macOS run macos/build.sh")

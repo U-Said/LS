@@ -56,13 +56,16 @@ function New-Png([string]$src, [int]$size, [double]$fill, [string]$path) {
 $assets = Join-Path $OutDir 'Assets'
 Remove-Item -Recurse -Force $assets -ErrorAction SilentlyContinue
 New-Item -ItemType Directory $assets | Out-Null
-$master = "$root\art\ls-1024.png"
+$master = "$root\art\fr-1024.png"
 foreach ($s in @{ 100 = 44; 125 = 55; 150 = 66; 200 = 88; 400 = 176 }.GetEnumerator()) {
     New-Png $master $s.Value 1.0 "$assets\Square44x44Logo.scale-$($s.Key).png"
 }
-foreach ($t in 16, 20, 24, 30, 32, 36, 40, 48, 60, 64, 72, 80, 96, 256) {   # drawn for each size, used as they are
-    Copy-Item "$root\art\ls-$t.png" "$assets\Square44x44Logo.targetsize-$t.png"
-    Copy-Item "$root\art\ls-$t.png" "$assets\Square44x44Logo.targetsize-$($t)_altform-unplated.png"
+foreach ($t in 16, 20, 24, 30, 32, 36, 40, 48, 60, 64, 72, 80, 96, 256) {
+    $small = "$root\art\fr-$t.png"   # 16...40 are drawn for their size (tools/draw_small_icons.ps1), used as they are
+    foreach ($n in "targetsize-$t", "targetsize-$($t)_altform-unplated") {
+        if (Test-Path $small) { Copy-Item $small "$assets\Square44x44Logo.$n.png" }
+        else { New-Png $master $t 1.0 "$assets\Square44x44Logo.$n.png" }
+    }
 }
 foreach ($s in @{ 100 = 150; 125 = 188; 150 = 225; 200 = 300; 400 = 600 }.GetEnumerator()) {
     New-Png $master $s.Value 0.8 "$assets\Square150x150Logo.scale-$($s.Key).png"

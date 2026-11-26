@@ -1,0 +1,8 @@
+{
+  "captions": ["FR", "RF"],
+  "size": 512,
+  "holdMs": 1400,
+  "flipMs": 440,
+  "staggerMs": 40,
+  "frameMs": 40
+}

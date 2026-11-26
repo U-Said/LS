@@ -1,9 +1,9 @@
-﻿# Builds the app icons from art/ls-<size>.png (the "LS toggle, Graphite" artwork; art/ls.svg is the
-# master drawing, art/ls-small.svg the bolder variant the 16–32 px PNGs are drawn from):
+﻿# Builds the app icons from art/fr-<size>.png (the "Tablo FR" artwork: art/fr-1024.png is made from the
+# designer's art/tablo/FastRevers-Tablo-FR.png, the 16...40 px PNGs are drawn by tools/draw_small_icons.ps1):
 #   windows/LS.ico      — all 16 Windows 11 sizes: up to 48 px as plain BMP frames (tray, menus, small views),
 #                         60…256 px as PNG frames to keep FastRevers.exe small
 #   macos/LS.iconset/   — PNG set for iconutil (the .icns itself is made on the Mac by macos/build.sh)
-# A size with no PNG in art/ is scaled down from art/ls-1024.png.
+# A size with no PNG in art/ is scaled down from art/fr-1024.png.
 # Run from anywhere: powershell -File tools/make_icons.ps1
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
@@ -11,10 +11,10 @@ $root = Split-Path $PSScriptRoot -Parent
 $art = Join-Path $root 'art'
 
 function Load([int]$size) {
-    $p = Join-Path $art "ls-$size.png"
+    $p = Join-Path $art "fr-$size.png"
     if (Test-Path $p) { return [System.Drawing.Bitmap]::new($p) }
     # missing size: scale down the 1024 master
-    $src = [System.Drawing.Bitmap]::new((Join-Path $art 'ls-1024.png'))
+    $src = [System.Drawing.Bitmap]::new((Join-Path $art 'fr-1024.png'))
     $bmp = [System.Drawing.Bitmap]::new($size, $size, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
     $g = [System.Drawing.Graphics]::FromImage($bmp)
     $g.InterpolationMode = 'HighQualityBicubic'; $g.PixelOffsetMode = 'HighQuality'; $g.CompositingQuality = 'HighQuality'

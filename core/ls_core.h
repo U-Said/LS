@@ -13,7 +13,7 @@ extern "C" {
 
 typedef uint16_t ls_char;
 
-#define LS_VERSION "2.2.0"
+#define LS_VERSION "2.2.1"
 #define LS_DONATE_URL "https://app.lava.top/4179967925"
 #define LS_PRIVACY_URL "https://github.com/U-Said/FastRevers/blob/main/PRIVACY.md"
 

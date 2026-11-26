@@ -4,8 +4,8 @@
 IDI_LS ICON "LS.ico"
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,2,0,0
- PRODUCTVERSION 2,2,0,0
+ FILEVERSION 2,2,1,0
+ PRODUCTVERSION 2,2,1,0
  FILEFLAGSMASK 0x3fL
  FILEFLAGS 0x0L
  FILEOS VOS_NT_WINDOWS32
@@ -18,12 +18,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "U-Said"
             VALUE "FileDescription", "FastRevers"
-            VALUE "FileVersion", "2.2.0"
+            VALUE "FileVersion", "2.2.1"
             VALUE "InternalName", "FastRevers"
             VALUE "LegalCopyright", "Copyright (c) 2026 U-Said. MIT License"
             VALUE "OriginalFilename", "FastRevers.exe"
             VALUE "ProductName", "FastRevers"
-            VALUE "ProductVersion", "2.2.0"
+            VALUE "ProductVersion", "2.2.1"
         END
     END
     BLOCK "VarFileInfo"

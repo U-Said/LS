@@ -1,5 +1,7 @@
 # FastRevers
 
+<img src="docs/fastrevers-tablo.gif" width="200" alt="FastRevers">
+
 **Русский** · [English](#english)
 
 **FastRevers™** — лёгкий переключатель раскладки RU/EN для Windows и macOS, альтернатива Punto Switcher. Одна маленькая программа без установки: скачали, распаковали, запустили.
@@ -251,3 +253,5 @@ Punto Switcher is a product of Yandex, Caramba Switcher belongs to its respectiv
 ## License
 
 [MIT](LICENSE). Copyright (c) 2026 U-Said.
+
+The “Tablo FR” icon (`art/`) was made for this project with the help of ChatGPT; the small 16–40 px sizes are drawn by `tools/draw_small_icons.ps1`. The letter font `art/tablo/source/FastRevers-Display-Bold.ttf` is derived from Noto Sans Bold and stays under the [SIL Open Font License 1.1](art/tablo/source/FONT-LICENSE.txt). / Значок «табло FR» (`art/`) сделан для проекта с помощью ChatGPT, мелкие размеры 16–40 px нарисованы `tools/draw_small_icons.ps1`. Шрифт букв — производный от Noto Sans Bold, под лицензией SIL OFL 1.1.

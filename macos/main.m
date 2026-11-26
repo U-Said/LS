@@ -530,7 +530,7 @@ static BOOL Trusted(BOOL prompt)
     return AXIsProcessTrustedWithOptions((__bridge CFDictionaryRef)o);
 }
 
-// ------------------------------------------------------------------ menu bar icon: "LS" in a rounded badge
+// ------------------------------------------------------------------ menu bar icon: "FR" in a rounded badge
 static NSImage *StatusImage(void)
 {
     NSImage *img = [NSImage imageWithSize:NSMakeSize(22, 16)
@@ -546,7 +546,7 @@ static NSImage *StatusImage(void)
                                    NSFontAttributeName : [NSFont systemFontOfSize:10 weight:NSFontWeightBold],
                                    NSForegroundColorAttributeName : NSColor.blackColor,
                                };
-                               NSAttributedString *s = [[NSAttributedString alloc] initWithString:@"LS"
+                               NSAttributedString *s = [[NSAttributedString alloc] initWithString:@"FR"
                                                                                        attributes:a];
                                NSSize sz = s.size;
                                [s drawAtPoint:NSMakePoint(NSMidX(box) - sz.width / 2, NSMidY(box) - sz.height / 2)];
