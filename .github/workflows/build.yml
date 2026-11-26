@@ -87,7 +87,7 @@ jobs:
 
       - name: Package
         shell: pwsh
-        run: Compress-Archive -Path build\Release\LiteSwitcher.exe -DestinationPath ${{ matrix.zip }}
+        run: Compress-Archive -Path build\Release\LiteSwitcher.exe, LICENSE -DestinationPath ${{ matrix.zip }}
 
       - uses: actions/upload-artifact@v4
         with:
@@ -117,7 +117,14 @@ jobs:
           build/macos/LiteSwitcher.app/Contents/MacOS/LiteSwitcher --render-icon menubar-icon.png
 
       - name: Package
-        run: ditto -c -k --keepParent build/macos/LiteSwitcher.app LiteSwitcher-macOS.zip
+        run: |
+          # LICENSE goes next to the app, not into it: the signed bundle must not change
+          mkdir -p zip
+          ditto build/macos/LiteSwitcher.app zip/LiteSwitcher.app
+          cp LICENSE zip/
+          ditto -c -k zip LiteSwitcher-macOS.zip
+          codesign --verify --deep --strict zip/LiteSwitcher.app
+          unzip -l LiteSwitcher-macOS.zip | tail -n 3
 
       - uses: actions/upload-artifact@v4
         with:

@@ -704,6 +704,14 @@ static void AdoptOldLogin(void)
         ShowAlert(L(@"LiteSwitcher: нужны две раскладки", @"LiteSwitcher needs two input sources"),
                   L(@"Добавьте в «Системные настройки → Клавиатура → Источники ввода» раскладки ABC (или США) и «Русская».",
                     @"Add ABC (or U.S.) and Russian in System Settings → Keyboard → Input Sources."));
+    if (!Trusted(NO) && ![ud boolForKey:@"accessExplained"]) {  // once, before macOS asks for the access
+        ShowAlert(L(@"Зачем LiteSwitcher «Универсальный доступ»", @"Why LiteSwitcher needs Accessibility access"),
+                  L(@"Доступ нужен, чтобы видеть нажатия текущего слова и перепечатывать его. Нажатия не сохраняются "
+                    @"и никуда не отправляются; на диск записываются только слова, исправление которых вы отменили.",
+                    @"Access is needed to see the keys of the current word and retype it. Keystrokes are not saved or "
+                    @"sent anywhere; only words whose fix you undid are written to disk."));
+        [ud setBool:YES forKey:@"accessExplained"];
+    }
     [self startWhenTrusted:YES];
 }
 
@@ -776,7 +784,8 @@ static void AdoptOldLogin(void)
     [self add:m title:L(@"Исключения…", @"Exceptions…") action:@selector(openExceptions:) on:NO];
     [self add:m title:L(@"Перечитать исключения", @"Reload exceptions") action:@selector(reloadExceptions:) on:NO];
     [m addItem:NSMenuItem.separatorItem];
-    [self add:m title:L(@"Поддержать проект…", @"Support the project…") action:@selector(openDonate:) on:NO];
+    [self add:m title:L(@"Конфиденциальность…", @"Privacy…") action:@selector(openPrivacy:) on:NO];
+    [self add:m title:L(@"Поддержать проект (lava.top)…", @"Support the project (lava.top)…") action:@selector(openDonate:) on:NO];
     NSMenuItem *about =[m addItemWithTitle:[NSString stringWithFormat:@"LiteSwitcher %s", LS_VERSION] action:nil keyEquivalent:@""];
     about.enabled = NO;
     NSMenuItem *quit = [m addItemWithTitle:L(@"Выйти из LiteSwitcher", @"Quit LiteSwitcher") action:@selector(terminate:) keyEquivalent:@"q"];
@@ -820,6 +829,12 @@ static void AdoptOldLogin(void)
 {
     (void)sender;
     [NSWorkspace.sharedWorkspace openURL:[NSURL URLWithString:@LS_DONATE_URL]];
+}
+
+- (void)openPrivacy:(id)sender
+{
+    (void)sender;
+    [NSWorkspace.sharedWorkspace openURL:[NSURL URLWithString:@LS_PRIVACY_URL]];
 }
 
 - (void)openAccessibility:(id)sender

@@ -39,7 +39,7 @@ const char kTerminals[] =
     "windowsterminal cmd powershell pwsh conhost openconsole putty kitty mintty alacritty wezterm-gui mobaxterm tabby hyper";
 
 enum : UINT { WM_TRAY = WM_APP + 1, WM_LS_RUN, WM_LS_HELLO };
-enum : UINT { IDM_AUTO = 100, IDM_SHIFT, IDM_STARTUP, IDM_EXCEPTIONS, IDM_RELOAD, IDM_EXIT, IDM_DONATE };
+enum : UINT { IDM_AUTO = 100, IDM_SHIFT, IDM_STARTUP, IDM_EXCEPTIONS, IDM_RELOAD, IDM_EXIT, IDM_DONATE, IDM_PRIVACY };
 constexpr UINT_PTR kTimerExceptions = 1;
 
 struct Key {
@@ -64,6 +64,7 @@ HHOOK g_kbd, g_mouse;
 UINT g_taskbarCreated;
 bool g_ru;        // Russian UI
 bool g_packaged;  // runs from the Microsoft Store package (MSIX)
+bool g_closedOld, g_adoptedFiles, g_adoptedStartup;  // what was taken over from LS 2.0.x at this start
 std::wstring g_exe, g_dir, g_ini, g_exc;
 bool g_optAuto = true, g_optShift = true;
 FILETIME g_excTime{};
@@ -139,7 +140,7 @@ bool Exists(const std::wstring &path) { return GetFileAttributesW(path.c_str()) 
 // Settings of the old name (LS.ini, %APPDATA%\LS) are taken over once, by renaming them.
 void AdoptOld(const std::wstring &oldPath, const std::wstring &newPath)
 {
-    if (!Exists(newPath) && Exists(oldPath)) MoveFileW(oldPath.c_str(), newPath.c_str());
+    if (!Exists(newPath) && Exists(oldPath) && MoveFileW(oldPath.c_str(), newPath.c_str())) g_adoptedFiles = true;
 }
 
 bool IsPackaged()
@@ -901,7 +902,8 @@ void SetStartup(bool on)
 }
 
 // LS 2.0.x started with Windows under the name "LS": move that entry over to LiteSwitcher.exe once.
-// If it was switched off in Settings > Apps > Startup, autostart stays off.
+// If it was switched off in Settings > Apps > Startup, autostart stays off; a "turned off" mark the user
+// set for LiteSwitcher there is left as it is too.
 void AdoptOldStartup()
 {
     wchar_t value[MAX_PATH * 4];
@@ -917,7 +919,11 @@ void AdoptOldStartup()
                size >= 1 && (approved[0] & 1);
     RegDeleteKeyValueW(HKEY_CURRENT_USER, kRunKey, kOldRunName);
     RegDeleteKeyValueW(HKEY_CURRENT_USER, kApprovedKey, kOldRunName);
-    if (!off) SetStartup(true);
+    if (!off) {
+        std::wstring v = Quoted(g_exe);
+        RegSetKeyValueW(HKEY_CURRENT_USER, kRunKey, kRunName, REG_SZ, v.c_str(), (DWORD)((v.size() + 1) * 2));
+        g_adoptedStartup = true;
+    }
 }
 
 // A running LS.exe (2.0.x, the old name) is closed so that LiteSwitcher.exe takes over without a restart.
@@ -941,35 +947,55 @@ bool RetireOldName()
         old = WaitForSingleObject(p, 5000) == WAIT_OBJECT_0;
     }
     CloseHandle(p);
+    g_closedOld = old;
     return old;
 }
 
-// The AutoHotkey version (LS.ahk) would fix every word twice: close it and take over its autostart.
-BOOL CALLBACK CloseScriptVersion(HWND w, LPARAM)
+// The AutoHotkey version (LS.ahk) would fix every word twice. LiteSwitcher does not close it or change its
+// autostart: it only tells the user what to do.
+BOOL CALLBACK FindScriptVersion(HWND w, LPARAM found)
 {
     wchar_t cls[32], title[1024];
     if (GetClassNameW(w, cls, ARRAYSIZE(cls)) && wcscmp(cls, L"AutoHotkey") == 0 &&
         GetWindowTextW(w, title, ARRAYSIZE(title))) {
         CharLowerW(title);
-        if (wcsstr(title, L"\\ls.ahk")) PostMessageW(w, WM_COMMAND, 65307 /* AutoHotkey: Exit */, 0);
+        if (wcsstr(title, L"\\ls.ahk")) {
+            *reinterpret_cast<bool *>(found) = true;
+            return FALSE;
+        }
     }
     return TRUE;
 }
 
-void RetireScriptVersion()
+void WarnScriptVersion()
 {
-    EnumWindows(CloseScriptVersion, 0);
+    bool running = false, shortcut = false;
+    EnumWindows(FindScriptVersion, reinterpret_cast<LPARAM>(&running));
     PWSTR dir = nullptr;
     if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_Startup, 0, nullptr, &dir))) {
-        std::wstring lnk = std::wstring(dir) + L"\\LS.lnk";
         std::string data;
         const char wide[] = "L\0S\0.\0a\0h\0k\0";
-        if (ReadAll(lnk, data) &&
-            (data.find("LS.ahk") != std::string::npos || data.find(std::string(wide, 12)) != std::string::npos) &&
-            DeleteFileW(lnk.c_str()))
-            SetStartup(true);
+        shortcut = ReadAll(std::wstring(dir) + L"\\LS.lnk", data) &&
+                   (data.find("LS.ahk") != std::string::npos || data.find(std::string(wide, 12)) != std::string::npos);
     }
     CoTaskMemFree(dir);
+    if (!running && !shortcut) return;
+    std::wstring text;
+    if (running)
+        text = T(L"Запущена старая версия LS.ahk. Закройте её (значок AutoHotkey у часов → Exit), иначе слова будут "
+                 L"исправляться дважды.",
+                 L"An old LS.ahk is running. Close it (AutoHotkey icon near the clock → Exit), otherwise words will be "
+                 L"fixed twice.");
+    if (shortcut) {
+        if (!text.empty()) text += L"\n\n";
+        text += T(L"В автозагрузке остался ярлык LS.lnk старой версии. Удалите его из папки shell:startup "
+                  L"(Win+R → shell:startup), иначе она запустится снова. Чтобы с Windows запускался LiteSwitcher, "
+                  L"включите в его меню «Запускать вместе с Windows».",
+                  L"The old version's LS.lnk shortcut is still in the Startup folder. Delete it from shell:startup "
+                  L"(Win+R → shell:startup), or the old version will start again. To start LiteSwitcher with "
+                  L"Windows, tick “Start with Windows” in its menu.");
+    }
+    MessageBoxW(nullptr, text.c_str(), L"LiteSwitcher", MB_ICONWARNING | MB_SETFOREGROUND);
 }
 
 // ------------------------------------------------------------------ tray
@@ -993,8 +1019,8 @@ void Balloon(const wchar_t *title, const wchar_t *text)
     if (!big) LoadIconMetric(g_inst, MAKEINTRESOURCEW(IDI_LS), LIM_LARGE, &big);
     NOTIFYICONDATAW n = g_nid;
     n.uFlags = NIF_INFO;
-    wcscpy_s(n.szInfoTitle, title);
-    wcscpy_s(n.szInfo, text);
+    wcsncpy_s(n.szInfoTitle, title, _TRUNCATE);  // wcscpy_s would end the program on a too long text
+    wcsncpy_s(n.szInfo, text, _TRUNCATE);
     n.dwInfoFlags = NIIF_USER | NIIF_LARGE_ICON;
     n.hBalloonIcon = big;
     Shell_NotifyIconW(NIM_MODIFY, &n);
@@ -1042,6 +1068,9 @@ void OnCommand(UINT id)
     case IDM_DONATE:
         ShellExecuteW(nullptr, L"open", TEXT(LS_DONATE_URL), nullptr, nullptr, SW_SHOWNORMAL);
         break;
+    case IDM_PRIVACY:
+        ShellExecuteW(nullptr, L"open", TEXT(LS_PRIVACY_URL), nullptr, nullptr, SW_SHOWNORMAL);
+        break;
     case IDM_EXIT:
         DestroyWindow(g_wnd);
         break;
@@ -1060,7 +1089,8 @@ void ShowMenu()
     add(IDM_EXCEPTIONS, T(L"Исключения…", L"Exceptions…"), false);
     add(IDM_RELOAD, T(L"Перечитать исключения", L"Reload exceptions"), false);
     AppendMenuW(m, MF_SEPARATOR, 0, nullptr);
-    add(IDM_DONATE, T(L"Поддержать проект…", L"Support the project…"), false);
+    add(IDM_PRIVACY, T(L"Конфиденциальность…", L"Privacy…"), false);
+    add(IDM_DONATE, T(L"Поддержать проект (lava.top)…", L"Support the project (lava.top)…"), false);
     add(IDM_EXIT, T(L"Выход", L"Exit"), false);
     POINT pt;
     GetCursorPos(&pt);
@@ -1232,7 +1262,7 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int)
     ChangeWindowMessageFilterEx(g_wnd, WM_LS_HELLO, MSGFLT_ALLOW, nullptr);
     TrayAdd();
     if (!g_packaged) {  // older portable versions have nothing to hand over to the Store package
-        RetireScriptVersion();
+        WarnScriptVersion();
         AdoptOldStartup();
     }
 
@@ -1251,12 +1281,19 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int)
         Balloon(T(L"LiteSwitcher: нужны две раскладки", L"LiteSwitcher needs two layouts"),
                 T(L"Добавьте в Windows раскладки «Русская» и «Английская (США)».",
                   L"Add the Russian and English (US) keyboard layouts in Windows settings."));
+    } else if (g_closedOld || g_adoptedFiles || g_adoptedStartup) {
+        std::wstring text;
+        if (g_adoptedFiles) text += T(L"Настройки и исключения LS перенесены. ", L"LS settings and exceptions were moved over. ");
+        if (g_adoptedStartup) text += T(L"Автозапуск перенесён. ", L"Start with Windows was moved over. ");
+        text += T(L"Файл LS.exe можно удалить.", L"You can delete LS.exe.");
+        Balloon(T(L"LiteSwitcher заменил LS 2.0", L"LiteSwitcher replaced LS 2.0"), text.c_str());
+        WriteOption(L"Welcomed", true);
     } else if (!ReadOption(L"Welcomed", 0)) {
         Balloon(T(L"LiteSwitcher работает", L"LiteSwitcher is running"),
-                T(L"Пробел исправляет слово, набранное не в той раскладке. Двойной Shift или Pause — вручную. "
-                  L"Меню — по значку LiteSwitcher.",
-                  L"Space fixes a word typed in the wrong layout. Double Shift or Pause fixes it by hand. "
-                  L"Click the LiteSwitcher icon for the menu."));
+                T(L"Пробел исправляет слово, набранное не в той раскладке; двойной Shift или Pause — вручную. "
+                  L"Отменённые исправления запоминаются в exceptions.txt на этом ПК. В сеть ничего не отправляется.",
+                  L"Space fixes a word typed in the wrong layout; double Shift or Pause fixes it by hand. "
+                  L"Undone fixes are remembered in exceptions.txt on this PC. Nothing is sent anywhere."));
         WriteOption(L"Welcomed", true);
     }
 

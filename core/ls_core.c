@@ -203,6 +203,8 @@ static void wset_add_words(wset *w, const char *words)
 }
 
 /* ------------------------------------------------------------------ word lists */
+/* Lists of frequent words were compiled for this project (with an AI assistant) and are not copied from
+   third-party dictionaries; MIT, like the rest of the code. */
 static const char COMMON_EN[] =
     "the be to of and in that have it for not on with he as you do at this but his by from they we say her she or an "
     "will my one all would there their what so up out if about who get which go me when make can like time no just him "
